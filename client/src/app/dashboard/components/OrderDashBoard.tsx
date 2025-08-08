@@ -11,7 +11,7 @@ export function OrderDashBoard() {
 
   return (
     <div>
-      <OrderCharts/>
+      <OrderCharts />
       <OrderTable/>
     </div>
   );
