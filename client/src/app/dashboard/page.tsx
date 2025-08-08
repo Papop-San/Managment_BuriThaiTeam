@@ -5,6 +5,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OrderDashBoard } from "./components/OrderDashBoard";
+import { PopularDashBoard } from "./components/PopularDashBoard";
 
 export default function DashboardPage() {
   return (
@@ -34,11 +35,7 @@ export default function DashboardPage() {
             <OrderDashBoard/>
         </div>
         <div>
-            Table
-        </div>
-        <div>
-          <div>Table</div>
-          <div>graph</div>
+          <PopularDashBoard/>
         </div>
       </div>
     </SidebarComponent>

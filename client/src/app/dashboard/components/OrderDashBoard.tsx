@@ -7,8 +7,6 @@ import { OrderTable } from "./OrderTable";
 
 
 export function OrderDashBoard() {
-  
-
   return (
     <div>
       <OrderCharts />
