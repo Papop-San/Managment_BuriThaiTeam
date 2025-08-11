@@ -28,13 +28,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown } from "lucide-react";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-
-
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export type AccountInterface = {
   userId: number;
@@ -122,12 +125,15 @@ export const columns: ColumnDef<AccountInterface>[] = [
       const imgSrc = row.original.userImg;
       const firstName = row.original.fistName;
       const lastName = row.original.lastName;
-  
+
       return (
         <div className="flex items-center space-x-3">
           <Avatar>
             <AvatarImage src={imgSrc} alt={`${firstName} ${lastName}`} />
-            <AvatarFallback>{firstName[0]}{lastName[0]}</AvatarFallback>
+            <AvatarFallback>
+              {firstName[0]}
+              {lastName[0]}
+            </AvatarFallback>
           </Avatar>
           <span>{`${firstName} ${lastName}`}</span>
         </div>
@@ -210,6 +216,33 @@ export default function AccountManagement() {
       },
     },
   });
+  const pageCount = table.getPageCount();
+  const pageIndex = table.getState().pagination.pageIndex;
+  const paginationRange = React.useMemo(() => {
+    const totalPages = pageCount;
+    const currentPage = pageIndex + 1;
+
+    const delta = 2;
+    const range: (number | "...")[] = [];
+    let l: number | undefined;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        if (l !== undefined) {
+          if (i - l > 1) {
+            range.push("...");
+          }
+        }
+        range.push(i);
+        l = i;
+      }
+    }
+    return range;
+  }, [pageCount, pageIndex]);
 
   return (
     <SidebarComponent>
@@ -225,7 +258,7 @@ export default function AccountManagement() {
             Delete
           </Button>
         </div>
-        <div>
+        <div className="overflow-hidden rounded-md border mx-auto">
           <Card>
             <CardContent>
               <div className="flex items-center py-5">
@@ -285,6 +318,67 @@ export default function AccountManagement() {
                     )}
                   </TableBody>
                 </Table>
+              </div>
+              {/* pagination */}
+              <div className="flex items-center space-x-2 py-4">
+                <Pagination className="justify-end">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!table.getCanPreviousPage()) return;
+                          table.previousPage();
+                        }}
+                        className={
+                          table.getCanPreviousPage()
+                            ? ""
+                            : "pointer-events-none opacity-50 cursor-not-allowed"
+                        }
+                      />
+                    </PaginationItem>
+
+                    {paginationRange.map((page, idx) =>
+                      page === "..." ? (
+                        <PaginationItem key={`ellipsis-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            isActive={
+                              page === table.getState().pagination.pageIndex + 1
+                            }
+                            onClick={(e) => {
+                              e.preventDefault();
+                              table.setPageIndex(page - 1);
+                            }}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!table.getCanNextPage()) return;
+                          table.nextPage();
+                        }}
+                        className={
+                          table.getCanNextPage()
+                            ? ""
+                            : "pointer-events-none opacity-50 cursor-not-allowed"
+                        }
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             </CardContent>
           </Card>
