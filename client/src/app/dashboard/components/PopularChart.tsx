@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -11,13 +11,11 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { TrendingUp } from "lucide-react";
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -408,7 +406,6 @@ function formatYear(date: Date) {
 function getSoldQuantity(p: PopularInterface) {
   return p.quantity - p.left_quantity;
 }
-
 // หา Top 5 Product ตามยอดขายรวม
 const totalSalesByProduct: Record<string, number> = {};
 popularProductsMock.forEach((p) => {
@@ -424,61 +421,79 @@ const colors = ["#4f46e5", "#ec4899", "#10b981", "#f97316", "#3b82f6"];
 
 export function ChartBarStackedTop5ByMonth() {
   const [filterBy, setFilterBy] = useState<"month" | "year">("month");
+  const [mounted, setMounted] = useState(false);
 
-  const monthlyDataMap: Record<string, Record<string, number>> = {};
-  const yearlyDataMap: Record<string, Record<string, number>> = {};
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  popularProductsMock.forEach((p) => {
-    if (!top5Products.includes(p.productName)) return;
-
-    const month = formatMonth(p.date);
-    const year = formatYear(p.date);
-    const sold = getSoldQuantity(p);
-
-    if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
-    monthlyDataMap[month][p.productName] =
-      (monthlyDataMap[month][p.productName] || 0) + sold;
-
-    if (!yearlyDataMap[year]) yearlyDataMap[year] = {};
-    yearlyDataMap[year][p.productName] =
-      (yearlyDataMap[year][p.productName] || 0) + sold;
-  });
-
-  // ข้อมูลกราฟแท่ง
-  const chartData =
-    filterBy === "month"
-      ? Object.entries(monthlyDataMap).map(([month, products]) => ({
-          month,
-          ...products,
-        }))
-      : Object.entries(yearlyDataMap).map(([year, products]) => ({
-          month: year,
-          ...products,
-        }));
-
-  const pieData: { name: string; value: number }[] = top5Products.map(
-    (productName) => {
-      const total = Object.values(
-        filterBy === "month" ? monthlyDataMap : yearlyDataMap
-      ).reduce((sum, productMap) => sum + (productMap[productName] || 0), 0);
-      return { name: productName, value: total };
+  const { chartData, pieData } = useMemo(() => {
+    if (!mounted) {
+      // ยังไม่ mounted ให้ return ข้อมูลว่างก่อน
+      return { chartData: [], pieData: [] };
     }
-  );
+
+    const monthlyDataMap: Record<string, Record<string, number>> = {};
+    const yearlyDataMap: Record<string, Record<string, number>> = {};
+
+    popularProductsMock.forEach((p) => {
+      if (!top5Products.includes(p.productName)) return;
+
+      const month = formatMonth(p.date);
+      const year = formatYear(p.date);
+      const sold = getSoldQuantity(p);
+
+      if (!monthlyDataMap[month]) monthlyDataMap[month] = {};
+      if (!monthlyDataMap[month][p.productName])
+        monthlyDataMap[month][p.productName] = 0;
+      monthlyDataMap[month][p.productName] += sold;
+
+      if (!yearlyDataMap[year]) yearlyDataMap[year] = {};
+      if (!yearlyDataMap[year][p.productName])
+        yearlyDataMap[year][p.productName] = 0;
+      yearlyDataMap[year][p.productName] += sold;
+    });
+
+    const dataMap = filterBy === "month" ? monthlyDataMap : yearlyDataMap;
+
+    const chartDataLocal = Object.entries(dataMap)
+      .sort(([a], [b]) => a.localeCompare(b)) // เรียงลำดับ key (เดือน/ปี)
+      .map(([time, products]) => ({
+        time,
+        ...products,
+      }));
+
+    const pieDataLocal: { name: string; value: number }[] = top5Products.map(
+      (productName) => {
+        const total = Object.values(dataMap).reduce(
+          (sum, productMap) => sum + (productMap[productName] || 0),
+          0
+        );
+        return { name: productName, value: total };
+      }
+    );
+
+    return { chartData: chartDataLocal, pieData: pieDataLocal };
+  }, [filterBy, mounted]);
+  if (!mounted) {
+    return null; 
+  }
 
   return (
-    <Card>
-      <CardHeader className="flex items-center justify-between">
-        <div>
+    <Card className="mt-4">
+      <CardHeader  className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+      <div className="grid flex-1 gap-1">
+          
           <CardTitle>
             Top 5 Products Sales by {filterBy === "month" ? "Month" : "Year"}
           </CardTitle>
-          <CardDescription>
+         <CardDescription>
             Stacked bar chart by product, grouped by {filterBy}
           </CardDescription>
         </div>
 
         <select
-          className="rounded border border-gray-300 px-2 py-1"
+          className="rounded border border-gray-300 px-4 py-2"
           value={filterBy}
           onChange={(e) => setFilterBy(e.target.value as "month" | "year")}
           aria-label="Select filter by month or year"
@@ -492,13 +507,14 @@ export function ChartBarStackedTop5ByMonth() {
         {/* Bar chart */}
         <div style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
           <BarChart
+            key={filterBy}
             width={900}
             height={400}
             data={chartData}
             barCategoryGap={10}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="month" />
+            <XAxis dataKey="time" /> {/* แก้จาก month เป็น time */}
             <Tooltip
               wrapperStyle={{ whiteSpace: "nowrap" }}
               contentStyle={{
@@ -549,16 +565,6 @@ export function ChartBarStackedTop5ByMonth() {
           </PieChart>
         </div>
       </CardContent>
-
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 leading-none font-medium">
-          Trending up by 8.3% this {filterBy === "month" ? "month" : "year"}{" "}
-          <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="text-muted-foreground leading-none">
-          Showing sales data stacked by product for each {filterBy}
-        </div>
-      </CardFooter>
     </Card>
   );
 }

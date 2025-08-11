@@ -1,3 +1,4 @@
+"use client";
 import { SidebarComponent } from "@/app/components/Sidebar";
 import {
   Card,

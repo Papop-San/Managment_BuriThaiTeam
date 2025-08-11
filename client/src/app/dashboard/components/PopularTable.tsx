@@ -16,7 +16,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -25,6 +24,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export type PopularInterface = {
   id: number;
@@ -37,97 +45,133 @@ export type PopularInterface = {
 };
 
 export const popularProductsMock: PopularInterface[] = [
-    {
-      id: 1,
-      productName: "iPhone 15 Pro Max",
-      categoryName: "Smartphone",
-      quantity: 120,
-      left_quantity: 80,
-      status_product: "in_stock",
-      date: new Date("2025-07-15"),
-    },
-    {
-      id: 2,
-      productName: "Samsung Galaxy S24 Ultra",
-      categoryName: "Smartphone",
-      quantity: 100,
-      left_quantity: 5,
-      status_product: "low_stock",
-      date: new Date("2025-07-18"),
-    },
-    {
-      id: 3,
-      productName: "Sony WH-1000XM5",
-      categoryName: "Headphones",
-      quantity: 50,
-      left_quantity: 0,
-      status_product: "out_of_stock",
-      date: new Date("2025-07-20"),
-    },
-    {
-      id: 4,
-      productName: "MacBook Air M3",
-      categoryName: "Laptop",
-      quantity: 75,
-      left_quantity: 60,
-      status_product: "in_stock",
-      date: new Date("2025-07-22"),
-    },
-    {
-      id: 5,
-      productName: "Dell XPS 15",
-      categoryName: "Laptop",
-      quantity: 40,
-      left_quantity: 3,
-      status_product: "low_stock",
-      date: new Date("2025-07-23"),
-    },
-    {
-      id: 6,
-      productName: "PlayStation 5",
-      categoryName: "Gaming Console",
-      quantity: 30,
-      left_quantity: 0,
-      status_product: "out_of_stock",
-      date: new Date("2025-07-25"),
-    },
-    {
-      id: 7,
-      productName: "Nintendo Switch OLED",
-      categoryName: "Gaming Console",
-      quantity: 60,
-      left_quantity: 45,
-      status_product: "in_stock",
-      date: new Date("2025-07-26"),
-    },
-    {
-      id: 8,
-      productName: "Apple Watch Series 9",
-      categoryName: "Wearable",
-      quantity: 90,
-      left_quantity: 2,
-      status_product: "low_stock",
-      date: new Date("2025-07-27"),
-    },
-    {
-      id: 9,
-      productName: "Logitech MX Master 3S",
-      categoryName: "Accessories",
-      quantity: 150,
-      left_quantity: 150,
-      status_product: "in_stock",
-      date: new Date("2025-07-28"),
-    },
-    {
-      id: 10,
-      productName: "Kindle Paperwhite",
-      categoryName: "E-Reader",
-      quantity: 35,
-      left_quantity: 0,
-      status_product: "out_of_stock",
-      date: new Date("2025-07-29"),
-    },
-  ];
+  {
+    id: 1,
+    productName: "iPhone 15 Pro Max",
+    categoryName: "Smartphone",
+    quantity: 120,
+    left_quantity: 80,
+    status_product: "in_stock",
+    date: new Date("2025-07-15"),
+  },
+  {
+    id: 2,
+    productName: "Samsung Galaxy S24 Ultra",
+    categoryName: "Smartphone",
+    quantity: 100,
+    left_quantity: 5,
+    status_product: "low_stock",
+    date: new Date("2025-07-18"),
+  },
+  {
+    id: 3,
+    productName: "Sony WH-1000XM5",
+    categoryName: "Headphones",
+    quantity: 50,
+    left_quantity: 0,
+    status_product: "out_of_stock",
+    date: new Date("2025-07-20"),
+  },
+  {
+    id: 4,
+    productName: "MacBook Air M3",
+    categoryName: "Laptop",
+    quantity: 75,
+    left_quantity: 60,
+    status_product: "in_stock",
+    date: new Date("2025-07-22"),
+  },
+  {
+    id: 5,
+    productName: "Dell XPS 15",
+    categoryName: "Laptop",
+    quantity: 40,
+    left_quantity: 3,
+    status_product: "low_stock",
+    date: new Date("2025-07-23"),
+  },
+  {
+    id: 6,
+    productName: "PlayStation 5",
+    categoryName: "Gaming Console",
+    quantity: 30,
+    left_quantity: 0,
+    status_product: "out_of_stock",
+    date: new Date("2025-07-25"),
+  },
+  {
+    id: 7,
+    productName: "Nintendo Switch OLED",
+    categoryName: "Gaming Console",
+    quantity: 60,
+    left_quantity: 45,
+    status_product: "in_stock",
+    date: new Date("2025-07-26"),
+  },
+  {
+    id: 8,
+    productName: "Apple Watch Series 9",
+    categoryName: "Wearable",
+    quantity: 90,
+    left_quantity: 2,
+    status_product: "low_stock",
+    date: new Date("2025-07-27"),
+  },
+  {
+    id: 9,
+    productName: "Logitech MX Master 3S",
+    categoryName: "Accessories",
+    quantity: 150,
+    left_quantity: 150,
+    status_product: "in_stock",
+    date: new Date("2025-07-28"),
+  },
+  {
+    id: 10,
+    productName: "Kindle Paperwhite",
+    categoryName: "E-Reader",
+    quantity: 35,
+    left_quantity: 0,
+    status_product: "out_of_stock",
+    date: new Date("2025-07-29"),
+  },
+  {
+    id: 11,
+    productName: "Google Pixel 8 Pro",
+    categoryName: "Smartphone",
+    quantity: 90,
+    left_quantity: 50,
+    status_product: "in_stock",
+    date: new Date("2025-08-01"),
+  },
+  {
+    id: 12,
+    productName: "Bose QuietComfort Earbuds",
+    categoryName: "Headphones",
+    quantity: 70,
+    left_quantity: 10,
+    status_product: "low_stock",
+    date: new Date("2025-08-03"),
+  },
+  {
+    id: 13,
+    productName: "Asus ROG Zephyrus G15",
+    categoryName: "Laptop",
+    quantity: 35,
+    left_quantity: 0,
+    status_product: "out_of_stock",
+    date: new Date("2025-08-05"),
+  },
+  {
+    id: 14,
+    productName: "Fitbit Charge 6",
+    categoryName: "Wearable",
+    quantity: 60,
+    left_quantity: 60,
+    status_product: "in_stock",
+    date: new Date("2025-08-06"),
+  },
+];
 export const columns: ColumnDef<PopularInterface>[] = [
   {
     id: "select",
@@ -238,40 +282,70 @@ export const columns: ColumnDef<PopularInterface>[] = [
 ];
 
 export function PopularTable() {
-    const [sorting, setSorting] = React.useState<SortingState>([]);
-    const [globalFilter, setGlobalFilter] = React.useState("");
-  
-    const table = useReactTable({
-      data: popularProductsMock,
-      columns,
-      state: { sorting, globalFilter },
-      onSortingChange: setSorting,
-      onGlobalFilterChange: setGlobalFilter,
-      getCoreRowModel: getCoreRowModel(),
-      getPaginationRowModel: getPaginationRowModel(),
-      getFilteredRowModel: getFilteredRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      initialState: {
-        pagination: {
-          pageSize: 10, // 👈 limit 10 ต่อหน้า
-        },
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
+
+  const table = useReactTable({
+    data: popularProductsMock,
+    columns,
+    state: { sorting, globalFilter },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
       },
-    });
+    },
+  });
+
+  const pageCount = table.getPageCount();
+  const pageIndex = table.getState().pagination.pageIndex;
+
+  const paginationRange = React.useMemo(() => {
+    const totalPages = pageCount;
+    const currentPage = pageIndex + 1;
   
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Popular Products</CardTitle>
-            <Input
-              placeholder="Search product..."
-              value={globalFilter ?? ""}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-64"
-            />
-          </div>
-        </CardHeader>
-        <CardContent>
+    const delta = 2;
+    const range: (number | "...")[] = [];
+    let l: number | undefined;
+  
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        if (l !== undefined) {
+          if (i - l > 1) {
+            range.push("...");
+          }
+        }
+        range.push(i);
+        l = i;
+      }
+    }
+    return range;
+  }, [pageCount, pageIndex]);
+
+  return (
+    <Card className="mt-10">
+      <CardHeader className=" space-y-0 border-b  sm:flex-row">
+        <div className="flex justify-between items-center">
+          <CardTitle>Popular Products</CardTitle>
+          <Input
+            placeholder="Search product..."
+            value={globalFilter ?? ""}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-64"
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-hidden rounded-md border">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -318,34 +392,69 @@ export function PopularTable() {
               )}
             </TableBody>
           </Table>
-  
-          {/* Pagination */}
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Page {table.getState().pagination.pageIndex + 1} of{" "}
-              {table.getPageCount()}
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  
+        </div>
+        {/* pagination */}
+        <div className="flex items-center space-x-2 py-4">
+          <Pagination className="justify-end">
+            <PaginationContent >
+              <PaginationItem>
+                <PaginationPrevious
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!table.getCanPreviousPage()) return;
+                    table.previousPage();
+                  }}
+                  className={
+                    table.getCanPreviousPage()
+                      ? ""
+                      : "pointer-events-none opacity-50 cursor-not-allowed"
+                  }
+                />
+              </PaginationItem>
+
+              {paginationRange.map((page, idx) =>
+                page === "..." ? (
+                  <PaginationItem key={`ellipsis-${idx}`}>
+                    <PaginationEllipsis />
+                  </PaginationItem>
+                ) : (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={
+                        page === table.getState().pagination.pageIndex + 1
+                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        table.setPageIndex(page - 1);
+                      }}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
+
+              <PaginationItem>
+                <PaginationNext
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!table.getCanNextPage()) return;
+                    table.nextPage();
+                  }}
+                  className={
+                    table.getCanNextPage()
+                      ? ""
+                      : "pointer-events-none opacity-50 cursor-not-allowed"
+                  }
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

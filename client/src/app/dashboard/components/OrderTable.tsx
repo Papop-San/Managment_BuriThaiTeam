@@ -13,13 +13,9 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
-import { ChevronDown } from "lucide-react";
-import { ArrowUpDown } from "lucide-react";
+import { ChevronDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
@@ -38,6 +34,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 export type OrderInterface = {
   id: number;
@@ -239,7 +245,6 @@ export const ordersMock: OrderInterface[] = [
   },
 ];
 
-
 export const columns: ColumnDef<OrderInterface>[] = [
   {
     id: "select",
@@ -420,6 +425,35 @@ export function OrderTable() {
     },
   });
 
+  const pageCount = table.getPageCount();
+  const pageIndex = table.getState().pagination.pageIndex;
+
+  const paginationRange = React.useMemo(() => {
+    const totalPages = pageCount;
+    const currentPage = pageIndex + 1;
+
+    const delta = 2;
+    const range: (number | "...")[] = [];
+    let l: number | undefined;
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - delta && i <= currentPage + delta)
+      ) {
+        if (l !== undefined) {
+          if (i - l > 1) {
+            range.push("...");
+          }
+        }
+        range.push(i);
+        l = i;
+      }
+    }
+    return range;
+  }, [pageCount, pageIndex]);
+
   return (
     <div className="w-full  py-7">
       <Card>
@@ -518,25 +552,65 @@ export function OrderTable() {
           </div>
 
           {/* pagination */}
-          <div className="flex items-center justify-end space-x-2 py-4">
-            <div className="space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-              >
-                Next
-              </Button>
-            </div>
+          <div className="flex items-center space-x-2 py-4">
+            <Pagination className="justify-end">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!table.getCanPreviousPage()) return;
+                      table.previousPage();
+                    }}
+                    className={
+                      table.getCanPreviousPage()
+                        ? ""
+                        : "pointer-events-none opacity-50 cursor-not-allowed"
+                    }
+                  />
+                </PaginationItem>
+
+                {paginationRange.map((page, idx) =>
+                  page === "..." ? (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={
+                          page === table.getState().pagination.pageIndex + 1
+                        }
+                        onClick={(e) => {
+                          e.preventDefault();
+                          table.setPageIndex(page - 1);
+                        }}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      if (!table.getCanNextPage()) return;
+                      table.nextPage();
+                    }}
+                    className={
+                      table.getCanNextPage()
+                        ? ""
+                        : "pointer-events-none opacity-50 cursor-not-allowed"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
           </div>
         </CardContent>
       </Card>
