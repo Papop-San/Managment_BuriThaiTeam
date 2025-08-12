@@ -38,6 +38,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useRouter } from "next/navigation";
 
 export type AccountInterface = {
   userId: number;
@@ -77,7 +78,71 @@ export const accountMock: AccountInterface[] = [
     last_login: new Date("2025-08-10T11:50:00"),
     status_active: true,
   },
+  {
+    userId: 4,
+    fistName: "Emily",
+    lastName: "Davis",
+    userImg: "https://randomuser.me/api/portraits/women/12.jpg",
+    create_date: new Date("2025-06-20T09:30:00"),
+    last_login: new Date("2025-08-07T14:10:00"),
+    status_active: true,
+  },
+  {
+    userId: 5,
+    fistName: "Michael",
+    lastName: "Brown",
+    userImg: "https://randomuser.me/api/portraits/men/54.jpg",
+    create_date: new Date("2025-04-15T11:00:00"),
+    last_login: new Date("2025-08-06T10:00:00"),
+    status_active: false,
+  },
+  {
+    userId: 6,
+    fistName: "Sophia",
+    lastName: "Wilson",
+    userImg: "https://randomuser.me/api/portraits/women/65.jpg",
+    create_date: new Date("2025-07-10T12:45:00"),
+    last_login: new Date("2025-08-09T09:00:00"),
+    status_active: true,
+  },
+  {
+    userId: 7,
+    fistName: "David",
+    lastName: "Martinez",
+    userImg: "https://randomuser.me/api/portraits/men/81.jpg",
+    create_date: new Date("2025-05-05T08:20:00"),
+    last_login: new Date("2025-08-05T16:15:00"),
+    status_active: true,
+  },
+  {
+    userId: 8,
+    fistName: "Olivia",
+    lastName: "Garcia",
+    userImg: "https://randomuser.me/api/portraits/women/34.jpg",
+    create_date: new Date("2025-06-18T07:40:00"),
+    last_login: new Date("2025-08-08T11:25:00"),
+    status_active: false,
+  },
+  {
+    userId: 9,
+    fistName: "James",
+    lastName: "Lee",
+    userImg: "https://randomuser.me/api/portraits/men/23.jpg",
+    create_date: new Date("2025-07-15T13:30:00"),
+    last_login: new Date("2025-08-10T08:50:00"),
+    status_active: true,
+  },
+  {
+    userId: 10,
+    fistName: "Isabella",
+    lastName: "Taylor",
+    userImg: "https://randomuser.me/api/portraits/women/56.jpg",
+    create_date: new Date("2025-05-30T14:15:00"),
+    last_login: new Date("2025-08-09T10:05:00"),
+    status_active: true,
+  },
 ];
+
 
 export const columns: ColumnDef<AccountInterface>[] = [
   {
@@ -108,26 +173,32 @@ export const columns: ColumnDef<AccountInterface>[] = [
     accessorKey: "userId",
     header: ({ column }) => (
       <div
-        className="flex items-center space-x-2 cursor-pointer select-none"
+        className="flex items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>Order ID</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
       </div>
     ),
-    cell: ({ row }) => <div>{row.getValue("userId")}</div>,
+    cell: ({ row }) => (
+      <div className="text-lg font-medium">{row.getValue("userId")}</div>
+    ),
   },
 
   {
     id: "accountName",
-    header: "Account Name",
+    header: () => (
+      <div className="text-lg font-semibold">
+        Account Name
+      </div>
+    ),
     cell: ({ row }) => {
       const imgSrc = row.original.userImg;
       const firstName = row.original.fistName;
       const lastName = row.original.lastName;
 
       return (
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 text-lg font-medium">
           <Avatar>
             <AvatarImage src={imgSrc} alt={`${firstName} ${lastName}`} />
             <AvatarFallback>
@@ -144,28 +215,32 @@ export const columns: ColumnDef<AccountInterface>[] = [
     accessorKey: "create_date",
     header: ({ column }) => (
       <div
-        className="flex items-center space-x-2 cursor-pointer select-none"
+        className="flex items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>Order Date</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
       </div>
     ),
     cell: ({ row }) => {
       const date: Date = row.getValue("create_date");
-      return <ClientOnlyDate date={date} />;
+      return (
+        <div className="text-lg font-medium">
+          <ClientOnlyDate date={date} />
+        </div>
+      );
     },
   },
   {
     accessorKey: "status_active",
-    header: () => <div>Status</div>,
+    header: () => <div className="text-lg font-semibold">Status</div>,
     cell: ({ row }) => {
       const value = row.getValue("status_active") as boolean;
       const color = value ? "bg-green-500" : "bg-red-500";
       const text = value ? "Active" : "Inactive";
 
       return (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 text-lg font-medium">
           <span className={`w-3 h-3 rounded-full ${color}`}></span>
           <span>{text}</span>
         </div>
@@ -175,6 +250,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
 ];
 
 export default function AccountManagement() {
+  const router = useRouter();
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -270,55 +346,47 @@ export default function AccountManagement() {
                 />
               </div>
               <div className="overflow-hidden rounded-md border">
-                <Table>
-                  <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => {
-                          return (
-                            <TableHead key={header.id}>
-                              {header.isPlaceholder
-                                ? null
-                                : flexRender(
-                                    header.column.columnDef.header,
-                                    header.getContext()
-                                  )}
-                            </TableHead>
-                          );
-                        })}
-                      </TableRow>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.original.userId}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/account/detail/${row.original.userId}`)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
                     ))}
-                  </TableHeader>
-                  <TableBody>
-                    {table.getRowModel().rows?.length ? (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={row.original.userId}
-                          data-state={row.getIsSelected() && "selected"}
-                        >
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          className="h-24 text-center"
-                        >
-                          No results.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
               {/* pagination */}
               <div className="flex items-center space-x-2 py-4">
                 <Pagination className="justify-end">

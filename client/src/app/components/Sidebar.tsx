@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import Link from "next/link";
 import {
   Sidebar,
   SidebarProvider,
@@ -6,8 +7,7 @@ import {
   SidebarFooter,
   SidebarHeader,
 } from "@/components/ui/sidebar";
-
-
+import { Button } from "@/components/ui/button";
 
 interface SidebarComponentProps {
   children: ReactNode;
@@ -16,19 +16,41 @@ interface SidebarComponentProps {
 export function SidebarComponent({ children }: SidebarComponentProps) {
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <Sidebar>
+      {/* เอา min-h-screen ออก เพื่อให้ความสูงตามเนื้อหา */}
+      <div className="flex w-full h-full">
+        <Sidebar className="h-full">
           <SidebarHeader className="text-center">
-            <p className="text-3xl font-semibold">Buri Thai Team </p>
+            <Link href="/dashboard" className="block py-2 hover:underline">
+              <p className="text-3xl font-semibold">Buri Thai Team</p>
+            </Link>
           </SidebarHeader>
-          <SidebarContent>{/* เมนูหรือเนื้อหาอื่น */}</SidebarContent>
+
+          <SidebarContent>
+            <div className="flex flex-col gap-2 p-3">
+              <Link href="/dashboard" >
+                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/account">
+                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
+                  Account
+                </Button>
+              </Link>
+              <Link href="/settings">
+                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
+                  Settings
+                </Button>
+              </Link>
+            </div>
+          </SidebarContent>
+
           <SidebarFooter>
-            <p>Footer</p>
+            <p className="p-3">Footer</p>
           </SidebarFooter>
         </Sidebar>
 
-        {/* เนื้อหาหลัก */}
-        <main className="flex-1 p-3 ml-6  flex flex-col">
+        <main className="flex-1 p-3 ml-6 flex flex-col">
           {children}
         </main>
       </div>
