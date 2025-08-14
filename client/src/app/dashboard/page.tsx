@@ -7,34 +7,36 @@ import { PopularDashBoard } from "./components/PopularDashBoard";
 export default function DashboardPage() {
   return (
     <SidebarComponent>
-      <div className="px-5">
-        <div className="text-center mt-5">
-          <p className="text-4xl font-semibold ">Dashboard</p>
+      <Card>
+        <div className="px-5">
+          <div className="text-center ">
+            <p className="text-4xl font-semibold ">Dashboard</p>
+          </div>
+          <div className="py-10 flex flex-wrap gap-13 justify-center">
+            {[...Array(4)].map((_, i) => (
+              <Card
+                key={i}
+                className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-xs h-full max-h-full "
+              >
+                <CardHeader>
+                  <CardTitle>Icon</CardTitle>
+                  <div className="flex flex-col items-center">
+                    <CardTitle className="text-2xl text-center">
+                      Card Title
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+          <div>
+            <OrderDashBoard />
+          </div>
+          <div>
+            <PopularDashBoard />
+          </div>
         </div>
-        <div className="py-10 flex flex-wrap gap-13 justify-center">
-          {[...Array(4)].map((_, i) => (
-            <Card
-              key={i}
-              className="w-full sm:w-1/2 md:w-1/3 lg:w-1/4 max-w-xs h-full max-h-full "
-            >
-              <CardHeader>
-                <CardTitle>Icon</CardTitle>
-                <div className="flex flex-col items-center">
-                  <CardTitle className="text-2xl text-center">
-                    Card Title
-                  </CardTitle>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-        <div>
-          <OrderDashBoard />
-        </div>
-        <div>
-          <PopularDashBoard />
-        </div>
-      </div>
+      </Card>
     </SidebarComponent>
   );
 }

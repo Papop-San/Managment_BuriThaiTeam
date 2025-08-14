@@ -1,6 +1,8 @@
 "use client";
 import React, { useState } from "react";
 import { SidebarComponent } from "@/app/components/Sidebar";
+import { StatusCell } from "./components/statusCell";
+
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -13,7 +15,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { Card, CardContent } from "@/components/ui/card";
+
 import {
   Table,
   TableBody,
@@ -22,12 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
-import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Pagination,
   PaginationContent,
@@ -37,8 +33,16 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ArrowUpDown } from "lucide-react";
+import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
 
 export type AccountInterface = {
   userId: number;
@@ -229,92 +233,45 @@ export const columns: ColumnDef<AccountInterface>[] = [
   {
     accessorKey: "status_active",
     header: () => <div className="text-lg font-semibold">Status</div>,
-    cell: ({ row, table }) => {
-      const [isEditing, setIsEditing] = useState(false);
-      const [tempValue, setTempValue] = useState(
-        row.getValue("status_active") as boolean
-      );
-  
-      const handleSave = () => {
-        row.original.status_active = tempValue;
-        setIsEditing(false);
-        table.setData([...table.getRowModel().rows.map(r => r.original)]);
-      };
-  
-      const handleCancel = () => {
-        setTempValue(row.getValue("status_active") as boolean);
-        setIsEditing(false);
-      };
-  
-      return (
-        <div className="flex items-center gap-3 text-lg font-medium">
-          {/* วงกลมสีใหญ่ */}
-          <span
-            className={`w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 ${
-              tempValue ? "bg-green-500" : "bg-red-500"
-            }`}
-          ></span>
-  
-          {!isEditing ? (
-            <>
-              {/* ข้อความ */}
-              <span>{tempValue ? "Active" : "Inactive"}</span>
-              <button
-                className="ml-2 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </button>
-            </>
-          ) : (
-            <>
-              {/* Dropdown */}
-              <select
-                value={tempValue.toString()}
-                onChange={(e) => setTempValue(e.target.value === "true")}
-                className="border rounded px-2 py-1 text-sm"
-              >
-                <option value="true">Active</option>
-                <option value="false">Inactive</option>
-              </select>
-  
-              <button
-                className="ml-2 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                onClick={handleSave}
-              >
-                Save
-              </button>
-              <button
-                className="ml-1 px-2 py-1 bg-gray-300 text-black rounded hover:bg-gray-400 text-sm"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <StatusCell
+      value={row.getValue("status_active")}
+      row={row.original}
+      data={data}      
+      setData={setData} 
+    />
+    
+    ),
   }
-  
-  
 ];
 
 export default function AccountManagement() {
   const router = useRouter();
+  const [data, setData] = React.useState<AccountInterface[]>(accountMock); // ✅ state ของ table
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const [searchValue, setSearchValue] = React.useState("");
 
   const table = useReactTable({
-    data: accountMock,
-    columns,
+    data,
+    columns: columns.map((col): ColumnDef<AccountInterface> => {
+      if (col.accessorKey === "status_active") {
+        return {
+          ...col,
+          cell: (context: CellContext<AccountInterface, boolean>) => (
+            <StatusCell
+              value={context.getValue()}
+              row={context.row.original}
+              data={data}
+              setData={setData}
+            />
+          ),
+        };
+      }
+      return col as ColumnDef<AccountInterface>;
+    }),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
@@ -325,7 +282,6 @@ export default function AccountManagement() {
     onRowSelectionChange: setRowSelection,
     onGlobalFilterChange: setSearchValue,
     globalFilterFn: (row, columnId, filterValue) => {
-      // รวมชื่อและนามสกุล และกรองแบบ case-insensitive
       const fullName =
         `${row.original.fistName} ${row.original.lastName}`.toLowerCase();
       return fullName.includes(String(filterValue).toLowerCase());
@@ -374,30 +330,34 @@ export default function AccountManagement() {
   return (
     <SidebarComponent>
       <div>
-        <div className="text-center mt-5">
-          <p className="text-4xl font-semibold ">Account Management</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-5 md:flex-row justify-end mx-10 my-10">
-          <Link href="/account/create">
-            <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
-              Create
-            </Button>
-          </Link>
-          <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-            Delete
-          </Button>
-        </div>
         <div className="overflow-hidden rounded-md border mx-auto">
           <Card>
+            <div className="text-center mt-5">
+              <p className="text-4xl font-semibold ">Account Management</p>
+            </div>
+
             <CardContent>
-              <div className="flex items-center py-5">
-                <Input
-                  placeholder="Search Account name"
-                  value={searchValue}
-                  onChange={(e) => setSearchValue(e.target.value)}
-                  className="w-full max-w-sm"
-                />
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <Input
+                    placeholder="Search product..."
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    className="w-100"
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-5 md:flex-row">
+                  <Link href="/stock/create">
+                    <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
+                      Create
+                    </Button>
+                  </Link>
+                  <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
+                    Delete
+                  </Button>
+                </div>
               </div>
+
               <div className="overflow-hidden rounded-md border">
                 <Table>
                   <TableHeader>

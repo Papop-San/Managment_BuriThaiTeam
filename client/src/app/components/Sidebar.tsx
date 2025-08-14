@@ -34,12 +34,17 @@ export function SidebarComponent({ children }: SidebarComponentProps) {
               </Link>
               <Link href="/account">
                 <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Account
+                  Account Management
                 </Button>
               </Link>
               <Link href="/role">
                 <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Role
+                  Role Mangement
+                </Button>
+              </Link>
+              <Link href="/stock">
+                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
+                  Stock Management
                 </Button>
               </Link>
             </div>

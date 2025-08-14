@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState } from "react";
-import { SidebarComponent } from "@/app/components/Sidebar";
+
 import {
   ColumnDef,
   flexRender,
@@ -13,7 +13,13 @@ import {
   useReactTable,
   getFilteredRowModel,
 } from "@tanstack/react-table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,6 +40,8 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { SidebarComponent } from "@/app/components/Sidebar";
+import { RoleCell } from "./components/roleCell";
 
 export type AccountInterface = {
   userId: number;
@@ -75,113 +83,62 @@ export const accountMock: AccountInterface[] = [
 ];
 
 export const columns: ColumnDef<AccountInterface>[] = [
-    {
-        accessorKey: "userId",
-        header: ({ column }) => (
-          <div
-            className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            <span>User ID</span>
-            <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-          </div>
-        ),
-        cell: ({ row }) => <div className="text-center text-lg font-medium w-full">{row.getValue("userId")}</div>,
-        sortingFn: "alphanumeric",
-    },
-    {
-        id: "accountName",
-        accessorFn: (row) => `${row.fistName} ${row.lastName}`,
-        header: ({ column }) => (
-          <div
-            className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            <span>Account Name</span>
-            <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-lg font-medium text-center">
-            {`${row.original.fistName} ${row.original.lastName}`}
-          </div>
-        ),
-        sortingFn: "alphanumeric", 
-      },
-      {
-        accessorKey: "email",
-        header: ({ column }) => (
-          <div
-            className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          >
-            <span>Email</span>
-            <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-          </div>
-        ),
-        cell: ({ row }) => (
-          <div className="text-center">{row.getValue("email")}</div>
-        ),
-      },
+  {
+    accessorKey: "userId",
+    header: ({ column }) => (
+      <div
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        <span>User ID</span>
+        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-center text-lg font-medium w-full">
+        {row.getValue("userId")}
+      </div>
+    ),
+    sortingFn: "alphanumeric",
+  },
+  {
+    id: "accountName",
+    accessorFn: (row) => `${row.fistName} ${row.lastName}`,
+    header: ({ column }) => (
+      <div
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        <span>Account Name</span>
+        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-lg font-medium text-center">
+        {`${row.original.fistName} ${row.original.lastName}`}
+      </div>
+    ),
+    sortingFn: "alphanumeric",
+  },
+  {
+    accessorKey: "email",
+    header: ({ column }) => (
+      <div
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        <span>Email</span>
+        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+      </div>
+    ),
+    cell: ({ row }) => (
+      <div className="text-center">{row.getValue("email")}</div>
+    ),
+  },
   {
     accessorKey: "role",
     header: () => <div className="text-lg font-semibold text-center">Role</div>,
-    cell: ({ row }) => {
-      const [isEditing, setIsEditing] = useState(false);
-      const [tempRole, setTempRole] = useState(row.original.role);
-  
-      const handleSave = () => {
-        row.original.role = tempRole;
-        setIsEditing(false);
-      };
-      const handleCancel = () => {
-        setTempRole(row.original.role);
-        setIsEditing(false);
-      };
-  
-      const colorMap: Record<string, string> = { admin: "bg-blue-500", client: "bg-green-500" };
-  
-      return (
-        <div className="inline-flex items-center gap-2 justify-center w-full">
-          {!isEditing ? (
-            <>
-              <span className={`px-3 py-1 rounded-full text-white text-sm ${colorMap[tempRole]}`}>
-                {tempRole}
-              </span>
-              <button
-                className="ml-2 px-2 py-1 bg-gray-200 rounded text-sm"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit
-              </button>
-            </>
-          ) : (
-            <>
-              <select
-                value={tempRole}
-                onChange={(e) => setTempRole(e.target.value as "admin" | "client")}
-                className="px-2 py-1 border rounded text-sm"
-              >
-                <option value="admin">admin</option>
-                <option value="client">client</option>
-              </select>
-              <button
-                className="ml-2 px-2 py-1 bg-green-500 text-white rounded text-sm"
-                onClick={handleSave}
-              >
-                Save
-              </button>
-              <button
-                className="ml-1 px-2 py-1 bg-gray-300 rounded text-sm"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-            </>
-          )}
-        </div>
-      );
-    },
+    cell: ({ row }) => <RoleCell value={row.original.role} row={row.original} />,
   },
 ];
 
@@ -228,21 +185,17 @@ export default function Role() {
   return (
     <SidebarComponent>
       <div className="px-5">
-        <div className="text-center mt-5">
-          <p className="text-4xl font-semibold">Role Management</p>
-        </div>
-        <Card className="mt-10">
-          <CardHeader className="border-b">
-            <div className="flex justify-between items-center">
-              <div>
-              <CardTitle>Role Management</CardTitle>
-              <CardDescription className="my-2">ใช้สำหรับเปลี่ยนแปลง Role ของ​ Account</CardDescription>
-              </div>
+        <Card>
+          <div className="text-center mt-5">
+            <p className="text-4xl font-semibold">Role Management</p>
+          </div>
+          <CardHeader className="">
+            <div className="">
               <Input
                 placeholder="Search account..."
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-64"
+                className="w-100"
               />
             </div>
           </CardHeader>
