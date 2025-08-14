@@ -1,6 +1,5 @@
 "use client";
-
-import React from "react";
+import React, { useState } from "react";
 import { SidebarComponent } from "@/app/components/Sidebar";
 import {
   ColumnDef,
@@ -39,6 +38,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export type AccountInterface = {
   userId: number;
@@ -143,7 +143,6 @@ export const accountMock: AccountInterface[] = [
   },
 ];
 
-
 export const columns: ColumnDef<AccountInterface>[] = [
   {
     id: "select",
@@ -187,11 +186,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
 
   {
     id: "accountName",
-    header: () => (
-      <div className="text-lg font-semibold">
-        Account Name
-      </div>
-    ),
+    header: () => <div className="text-lg font-semibold">Account Name</div>,
     cell: ({ row }) => {
       const imgSrc = row.original.userImg;
       const firstName = row.original.fistName;
@@ -234,19 +229,75 @@ export const columns: ColumnDef<AccountInterface>[] = [
   {
     accessorKey: "status_active",
     header: () => <div className="text-lg font-semibold">Status</div>,
-    cell: ({ row }) => {
-      const value = row.getValue("status_active") as boolean;
-      const color = value ? "bg-green-500" : "bg-red-500";
-      const text = value ? "Active" : "Inactive";
-
+    cell: ({ row, table }) => {
+      const [isEditing, setIsEditing] = useState(false);
+      const [tempValue, setTempValue] = useState(
+        row.getValue("status_active") as boolean
+      );
+  
+      const handleSave = () => {
+        row.original.status_active = tempValue;
+        setIsEditing(false);
+        table.setData([...table.getRowModel().rows.map(r => r.original)]);
+      };
+  
+      const handleCancel = () => {
+        setTempValue(row.getValue("status_active") as boolean);
+        setIsEditing(false);
+      };
+  
       return (
-        <div className="flex items-center gap-2 text-lg font-medium">
-          <span className={`w-3 h-3 rounded-full ${color}`}></span>
-          <span>{text}</span>
+        <div className="flex items-center gap-3 text-lg font-medium">
+          {/* วงกลมสีใหญ่ */}
+          <span
+            className={`w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 ${
+              tempValue ? "bg-green-500" : "bg-red-500"
+            }`}
+          ></span>
+  
+          {!isEditing ? (
+            <>
+              {/* ข้อความ */}
+              <span>{tempValue ? "Active" : "Inactive"}</span>
+              <button
+                className="ml-2 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                onClick={() => setIsEditing(true)}
+              >
+                Edit
+              </button>
+            </>
+          ) : (
+            <>
+              {/* Dropdown */}
+              <select
+                value={tempValue.toString()}
+                onChange={(e) => setTempValue(e.target.value === "true")}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+  
+              <button
+                className="ml-2 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                onClick={handleSave}
+              >
+                Save
+              </button>
+              <button
+                className="ml-1 px-2 py-1 bg-gray-300 text-black rounded hover:bg-gray-400 text-sm"
+                onClick={handleCancel}
+              >
+                Cancel
+              </button>
+            </>
+          )}
         </div>
       );
     },
-  },
+  }
+  
+  
 ];
 
 export default function AccountManagement() {
@@ -323,13 +374,15 @@ export default function AccountManagement() {
   return (
     <SidebarComponent>
       <div>
-        <div className="text-center">
+        <div className="text-center mt-5">
           <p className="text-4xl font-semibold ">Account Management</p>
         </div>
         <div className="flex flex-wrap items-center gap-5 md:flex-row justify-end mx-10 my-10">
-          <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
-            Crate
-          </Button>
+          <Link href="/account/create">
+            <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
+              Create
+            </Button>
+          </Link>
           <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
             Delete
           </Button>
@@ -346,47 +399,70 @@ export default function AccountManagement() {
                 />
               </div>
               <div className="overflow-hidden rounded-md border">
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-
-            <TableBody>
-              {table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.original.userId}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="cursor-pointer"
-                    onClick={() => router.push(`/account/detail/${row.original.userId}`)}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
+                <Table>
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead key={header.id}>
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
+                        ))}
+                      </TableRow>
                     ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={columns.length} className="h-24 text-center">
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                  </TableHeader>
+
+                  <TableBody>
+                    {table.getRowModel().rows.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow
+                          key={row.original.userId}
+                          data-state={row.getIsSelected() && "selected"}
+                        >
+                          {row.getVisibleCells().map((cell) => {
+                            // ให้คลิกได้เฉพาะ userId กับ accountName
+                            const isClickable =
+                              cell.column.id === "userId" ||
+                              cell.column.id === "accountName";
+
+                            return (
+                              <TableCell
+                                key={cell.id}
+                                className={isClickable ? "cursor-pointer" : ""}
+                                onClick={() => {
+                                  if (isClickable)
+                                    router.push(
+                                      `/account/detail/${row.original.userId}`
+                                    );
+                                }}
+                              >
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </TableCell>
+                            );
+                          })}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="h-24 text-center"
+                        >
+                          No results.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
               {/* pagination */}
               <div className="flex items-center space-x-2 py-4">
                 <Pagination className="justify-end">

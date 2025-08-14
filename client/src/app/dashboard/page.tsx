@@ -1,10 +1,6 @@
 "use client";
 import { SidebarComponent } from "@/app/components/Sidebar";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { OrderDashBoard } from "./components/OrderDashBoard";
 import { PopularDashBoard } from "./components/PopularDashBoard";
 
@@ -12,8 +8,8 @@ export default function DashboardPage() {
   return (
     <SidebarComponent>
       <div className="px-5">
-        <div>
-          <p className="text-3xl font-semibold ">Dashboard</p>
+        <div className="text-center mt-5">
+          <p className="text-4xl font-semibold ">Dashboard</p>
         </div>
         <div className="py-10 flex flex-wrap gap-13 justify-center">
           {[...Array(4)].map((_, i) => (
@@ -33,10 +29,10 @@ export default function DashboardPage() {
           ))}
         </div>
         <div>
-            <OrderDashBoard/>
+          <OrderDashBoard />
         </div>
         <div>
-          <PopularDashBoard/>
+          <PopularDashBoard />
         </div>
       </div>
     </SidebarComponent>

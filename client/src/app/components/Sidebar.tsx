@@ -37,9 +37,9 @@ export function SidebarComponent({ children }: SidebarComponentProps) {
                   Account
                 </Button>
               </Link>
-              <Link href="/settings">
+              <Link href="/role">
                 <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Settings
+                  Role
                 </Button>
               </Link>
             </div>

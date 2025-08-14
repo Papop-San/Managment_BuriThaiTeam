@@ -20,6 +20,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 export type PopularInterface = {
   id: number;
   productName: string;
@@ -398,10 +406,10 @@ export const popularProductsMock: PopularInterface[] = [
 ];
 
 function formatMonth(date: Date) {
-  return date.toISOString().slice(0, 7); // "YYYY-MM"
+  return date.toISOString().slice(0, 7); 
 }
 function formatYear(date: Date) {
-  return date.toISOString().slice(0, 4); // "YYYY"
+  return date.toISOString().slice(0, 4); 
 }
 function getSoldQuantity(p: PopularInterface) {
   return p.quantity - p.left_quantity;
@@ -492,15 +500,15 @@ export function ChartBarStackedTop5ByMonth() {
           </CardDescription>
         </div>
 
-        <select
-          className="rounded border border-gray-300 px-4 py-2"
-          value={filterBy}
-          onChange={(e) => setFilterBy(e.target.value as "month" | "year")}
-          aria-label="Select filter by month or year"
-        >
-          <option value="month">By Month</option>
-          <option value="year">By Year</option>
-        </select>
+        <Select value={filterBy} onValueChange={(value) => setFilterBy(value as "month" | "year")}>
+  <SelectTrigger className="w-[160px] rounded-lg border border-gray-300">
+    <SelectValue placeholder="Select filter" />
+  </SelectTrigger>
+  <SelectContent className="w-[160px] rounded-lg">
+    <SelectItem value="month">By Month</SelectItem>
+    <SelectItem value="year">By Year</SelectItem>
+  </SelectContent>
+</Select>
       </CardHeader>
 
       <CardContent className="flex flex-row gap-20 justify-center">

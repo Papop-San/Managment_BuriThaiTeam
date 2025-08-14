@@ -222,7 +222,7 @@ export default function AccountForm() {
                     </FormLabel>
                     <FormControl>
                       <Input
-                        className="text-xl p-3 font-medium"
+                       className="text-xl p-3 font-medium"
                         placeholder="Username"
                         {...field}
                       />
@@ -296,7 +296,7 @@ export default function AccountForm() {
                       </FormLabel>
                       <FormControl>
                         <Input
-                          className="text-xl p-3 font-medium"
+                        className="text-xl p-3 font-medium"
                           placeholder="Last Name"
                           {...field}
                         />

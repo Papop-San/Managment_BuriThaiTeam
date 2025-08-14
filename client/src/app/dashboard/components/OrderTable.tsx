@@ -479,7 +479,7 @@ export function OrderTable() {
                   Columns <ChevronDown />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" sideOffset={2}   className="min-w-[200px] p-1">
                 {table
                   .getAllColumns()
                   .filter((column) => column.getCanHide())
