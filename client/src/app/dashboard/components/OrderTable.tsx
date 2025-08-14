@@ -247,30 +247,6 @@ export const ordersMock: OrderInterface[] = [
 
 export const columns: ColumnDef<OrderInterface>[] = [
   {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value: boolean) =>
-          table.toggleAllPageRowsSelected(value)
-        }
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false, // ช่องนี้ไม่ต้องเรียงลำดับได้
-    enableHiding: false,
-  },
-  {
     accessorKey: "id",
     header: ({ column }) => (
       <div
@@ -479,7 +455,11 @@ export function OrderTable() {
                   Columns <ChevronDown />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" sideOffset={2}   className="min-w-[200px] p-1">
+              <DropdownMenuContent
+                align="end"
+                sideOffset={2}
+                className="min-w-[200px] p-1"
+              >
                 {table
                   .getAllColumns()
                   .filter((column) => column.getCanHide())
@@ -500,26 +480,28 @@ export function OrderTable() {
           </div>
 
           {/* table to show  */}
-          <div className="overflow-hidden rounded-md border">
-            <Table>
+          <div className="overflow-hidden rounded-md border w-full p-2">
+            <Table className="w-full">
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      return (
-                        <TableHead key={header.id}>
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      );
-                    })}
+                    {headerGroup.headers.map((header) => (
+                      <TableHead
+                        key={header.id}
+                        className="px-20 py-2 text-left" // <-- padding เท่ากับ body
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
                   </TableRow>
                 ))}
               </TableHeader>
+
               <TableBody>
                 {table.getRowModel().rows?.length ? (
                   table.getRowModel().rows.map((row) => (
@@ -528,7 +510,7 @@ export function OrderTable() {
                       data-state={row.getIsSelected() && "selected"}
                     >
                       {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} className="px-20 py-2">
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -541,7 +523,7 @@ export function OrderTable() {
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      className="h-24 text-center"
+                      className="h-24 text-center px-4 py-2"
                     >
                       No results.
                     </TableCell>

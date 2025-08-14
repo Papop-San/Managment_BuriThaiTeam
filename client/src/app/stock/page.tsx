@@ -52,7 +52,25 @@ export const stockItemsMockup: StockInterface[] = [
   { ProductId: 1, ProductName: "iPhone 15 Pro", category: "Smartphone", totalQuantity: 150, remainingQuantity: 75, sales: 75, status: "LowStock" },
   { ProductId: 2, ProductName: "MacBook Air M2", category: "Laptop", totalQuantity: 50, remainingQuantity: 50, sales: 0, status: "InStock" },
   { ProductId: 3, ProductName: "Samsung Galaxy S24", category: "Smartphone", totalQuantity: 100, remainingQuantity: 0, sales: 100, status: "OutOfStock" },
+  { ProductId: 4, ProductName: "Sony WH-1000XM5", category: "Headphones", totalQuantity: 80, remainingQuantity: 20, sales: 60, status: "LowStock" },
+  { ProductId: 5, ProductName: "iPad Pro 12.9", category: "Tablet", totalQuantity: 70, remainingQuantity: 35, sales: 35, status: "LowStock" },
+  { ProductId: 6, ProductName: "Dell XPS 13", category: "Laptop", totalQuantity: 60, remainingQuantity: 60, sales: 0, status: "InStock" },
+  { ProductId: 7, ProductName: "Google Pixel 8", category: "Smartphone", totalQuantity: 90, remainingQuantity: 10, sales: 80, status: "LowStock" },
+  { ProductId: 8, ProductName: "Bose QuietComfort 45", category: "Headphones", totalQuantity: 50, remainingQuantity: 0, sales: 50, status: "OutOfStock" },
+  { ProductId: 9, ProductName: "Apple Watch Series 9", category: "Wearable", totalQuantity: 120, remainingQuantity: 80, sales: 40, status: "InStock" },
+  { ProductId: 10, ProductName: "Samsung Galaxy Tab S9", category: "Tablet", totalQuantity: 40, remainingQuantity: 20, sales: 20, status: "LowStock" },
+  { ProductId: 11, ProductName: "Lenovo ThinkPad X1", category: "Laptop", totalQuantity: 55, remainingQuantity: 55, sales: 0, status: "InStock" },
+  { ProductId: 12, ProductName: "Sony Xperia 1 V", category: "Smartphone", totalQuantity: 75, remainingQuantity: 0, sales: 75, status: "OutOfStock" },
+  { ProductId: 13, ProductName: "JBL Flip 6", category: "Headphones", totalQuantity: 90, remainingQuantity: 45, sales: 45, status: "LowStock" },
+  { ProductId: 14, ProductName: "iMac 24", category: "Desktop", totalQuantity: 30, remainingQuantity: 30, sales: 0, status: "InStock" },
+  { ProductId: 15, ProductName: "Amazon Kindle Paperwhite", category: "E-Reader", totalQuantity: 100, remainingQuantity: 50, sales: 50, status: "LowStock" },
+  { ProductId: 16, ProductName: "Microsoft Surface Pro 9", category: "Tablet", totalQuantity: 60, remainingQuantity: 0, sales: 60, status: "OutOfStock" },
+  { ProductId: 17, ProductName: "HP Spectre x360", category: "Laptop", totalQuantity: 45, remainingQuantity: 45, sales: 0, status: "InStock" },
+  { ProductId: 18, ProductName: "Samsung Galaxy Buds 3", category: "Headphones", totalQuantity: 70, remainingQuantity: 25, sales: 45, status: "LowStock" },
+  { ProductId: 19, ProductName: "Oppo Find X6 Pro", category: "Smartphone", totalQuantity: 85, remainingQuantity: 0, sales: 85, status: "OutOfStock" },
+  { ProductId: 20, ProductName: "Asus ROG Zephyrus", category: "Laptop", totalQuantity: 40, remainingQuantity: 40, sales: 0, status: "InStock" },
 ];
+
 // Table Management
 export const columns: ColumnDef<StockInterface>[] = [
   {

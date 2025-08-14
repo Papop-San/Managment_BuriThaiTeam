@@ -173,30 +173,7 @@ export const popularProductsMock: PopularInterface[] = [
   },
 ];
 export const columns: ColumnDef<PopularInterface>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value: boolean) =>
-          table.toggleAllPageRowsSelected(value)
-        }
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+
   {
     accessorKey: "id",
     header: ({ column }) => (
@@ -347,50 +324,47 @@ export function PopularTable() {
       <CardContent>
         <div className="overflow-hidden rounded-md border">
           <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
+          <TableHeader>
+  {table.getHeaderGroups().map((headerGroup) => (
+    <TableRow key={headerGroup.id}>
+      {headerGroup.headers.map((header) => (
+        <TableHead
+          key={header.id}
+          className="px-20 py-2 text-left" // <-- padding เท่ากับ body
+        >
+          {header.isPlaceholder
+            ? null
+            : flexRender(
+                header.column.columnDef.header,
+                header.getContext()
               )}
-            </TableBody>
+        </TableHead>
+      ))}
+    </TableRow>
+  ))}
+</TableHeader>
+<TableBody>
+  {table.getRowModel().rows?.length ? (
+    table.getRowModel().rows.map((row) => (
+      <TableRow
+        key={row.id}
+        data-state={row.getIsSelected() && "selected"}
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} className="px-20 py-2">
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ))
+  ) : (
+    <TableRow>
+      <TableCell colSpan={columns.length} className="h-24 text-center px-4 py-2">
+        No results.
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
           </Table>
         </div>
         {/* pagination */}
