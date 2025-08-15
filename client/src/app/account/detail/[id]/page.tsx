@@ -17,15 +17,11 @@ import { useDropzone } from "react-dropzone";
 import { FiUser } from "react-icons/fi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-// ฟังก์ชันช่วย crop รูปจาก canvas
-async function getCroppedImg(
-  imageSrc: string,
-  croppedAreaPixels: Area
-): Promise<Blob | null> {
+// ฟังก์ชันช่วย crop รูป
+async function getCroppedImg(imageSrc: string, croppedAreaPixels: Area): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
-
   if (!ctx) return null;
 
   canvas.width = croppedAreaPixels.width;
@@ -43,11 +39,7 @@ async function getCroppedImg(
     croppedAreaPixels.height
   );
 
-  return new Promise((resolve) => {
-    canvas.toBlob((blob) => {
-      resolve(blob);
-    }, "image/jpeg");
-  });
+  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/jpeg"));
 }
 
 function createImage(url: string): Promise<HTMLImageElement> {
@@ -55,7 +47,7 @@ function createImage(url: string): Promise<HTMLImageElement> {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = (error) => reject(error);
+    img.onerror = reject;
     img.src = url;
   });
 }
@@ -85,24 +77,19 @@ const mockUserData: AccountFormValues = {
 };
 
 export default function AccountForm() {
-  const form = useForm<AccountFormValues>({
-    defaultValues: mockUserData,
-  });
+  const form = useForm<AccountFormValues>({ defaultValues: mockUserData });
 
-  const [imageSrc, setImageSrc] = useState<string | null>(
-    "https://i.pravatar.cc/300"
-  );
-  const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [imageSrc, setImageSrc] = useState<string | null>("https://i.pravatar.cc/300");
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) return;
+    if (!acceptedFiles.length) return;
     const file = acceptedFiles[0];
     setSelectedFile(file);
-
     const reader = new FileReader();
     reader.onload = () => {
       setImageSrc(reader.result as string);
@@ -117,39 +104,22 @@ export default function AccountForm() {
     maxFiles: 1,
   });
 
-  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => setCroppedAreaPixels(croppedAreaPixels), []);
 
   const handleCropConfirm = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
-
     const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
     if (!croppedBlob) return;
 
-    const croppedFile = new File(
-      [croppedBlob],
-      selectedFile?.name || "avatar.jpg",
-      { type: "image/jpeg" }
-    );
-
+    const croppedFile = new File([croppedBlob], selectedFile?.name || "avatar.jpg", { type: "image/jpeg" });
     form.setValue("avatar", croppedFile, { shouldValidate: true });
-
-    const croppedUrl = URL.createObjectURL(croppedFile);
-    setImageSrc(croppedUrl);
-
+    setImageSrc(URL.createObjectURL(croppedFile));
     setIsCropModalOpen(false);
   };
 
   const onSubmit: SubmitHandler<AccountFormValues> = (data) => {
     console.log("Form data:", data);
   };
-
-  React.useEffect(() => {
-    return () => {
-      if (imageSrc) URL.revokeObjectURL(imageSrc);
-    };
-  }, [imageSrc]);
 
   return (
     <Form {...form}>
@@ -160,7 +130,7 @@ export default function AccountForm() {
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="flex flex-col md:flex-row gap-8 md:gap-16">
-              {/* Left side: Avatar upload */}
+              {/* Left: Avatar */}
               <div className="flex-shrink-0 w-full md:w-[320px] flex flex-col items-center">
                 <FormField
                   control={form.control}
@@ -172,103 +142,33 @@ export default function AccountForm() {
                         <div
                           {...getRootProps()}
                           className={`border-2 border-dashed cursor-pointer flex items-center justify-center mt-10 rounded-full overflow-hidden relative ${
-                            isDragActive
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-300"
+                            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
                           }`}
-                          style={{
-                            width: "100%",
-                            maxWidth: 300,
-                            height: "auto",
-                            aspectRatio: "1 / 1",
-                            minHeight: 300,
-                          }}
+                          style={{ width: "100%", maxWidth: 300, aspectRatio: "1 / 1", minHeight: 300 }}
                         >
                           <input {...getInputProps()} />
                           {imageSrc ? (
-                            <img
-                              src={imageSrc}
-                              alt="Avatar Preview"
-                              className="w-full h-full object-cover rounded-full"
-                            />
+                            <img src={imageSrc} alt="Avatar Preview" className="w-full h-full object-cover rounded-full" />
                           ) : (
                             <FiUser className="text-gray-400" size={100} />
                           )}
                         </div>
                       </FormControl>
-
-                      <button
+                      <Button
                         type="button"
-                        onClick={() => {
-                          const input = document.querySelector(
-                            'input[type="file"]'
-                          ) as HTMLInputElement;
-                          input?.click();
-                        }}
                         className="bg-black text-white rounded px-4 py-2 mt-5 w-full max-w-[300px]"
+                        onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
                       >
                         Upload Image
-                      </button>
-
+                      </Button>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
 
-              {/* Right side: Input fields */}
+              {/* Right: Form Inputs */}
               <div className="flex-grow space-y-8 w-full">
-                {/* Username */}
-                <FormField
-                  control={form.control}
-                  name="username"
-                  rules={{ required: "Username is required" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold">
-                        Username
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          className="text-xl p-3 font-medium"
-                          placeholder="Username"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  rules={{
-                    required: "Email is required",
-                    pattern: {
-                      value: /^\S+@\S+$/i,
-                      message: "Invalid email address",
-                    },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold">
-                        Email
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          className="text-xl p-3 font-medium"
-                          type="email"
-                          placeholder="Email"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
                 <div className="grid gap-8 md:grid-cols-2">
                   {/* First Name */}
                   <FormField
@@ -277,15 +177,9 @@ export default function AccountForm() {
                     rules={{ required: "First name is required" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">
-                          First Name
-                        </FormLabel>
+                        <FormLabel className="text-lg font-semibold">First Name</FormLabel>
                         <FormControl>
-                          <Input
-                            className="text-xl p-3 font-medium"
-                            placeholder="First Name"
-                            {...field}
-                          />
+                          <Input className="text-xl p-3 font-medium" placeholder="First Name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -299,15 +193,9 @@ export default function AccountForm() {
                     rules={{ required: "Last name is required" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">
-                          Last Name
-                        </FormLabel>
+                        <FormLabel className="text-lg font-semibold">Last Name</FormLabel>
                         <FormControl>
-                          <Input
-                            className="text-xl p-3 font-medium"
-                            placeholder="Last Name"
-                            {...field}
-                          />
+                          <Input className="text-xl p-3 font-medium" placeholder="Last Name" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -315,29 +203,54 @@ export default function AccountForm() {
                   />
                 </div>
 
+                {/* Username */}
+                <FormField
+                  control={form.control}
+                  name="username"
+                  rules={{ required: "Username is required" }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold">Username</FormLabel>
+                      <FormControl>
+                        <Input className="text-xl p-3 font-medium" placeholder="Username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Email */}
+                <FormField
+                  control={form.control}
+                  name="email"
+                  rules={{
+                    required: "Email is required",
+                    pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-lg font-semibold">Email</FormLabel>
+                      <FormControl>
+                        <Input className="text-xl p-3 font-medium" placeholder="Email" type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <div className="grid gap-8 md:grid-cols-2">
                   {/* Phone */}
                   <FormField
                     control={form.control}
                     name="phone"
                     rules={{
-                      pattern: {
-                        value: /^[0-9]*$/,
-                        message: "Phone number must be numeric",
-                      },
+                      pattern: { value: /^[0-9]*$/, message: "Phone must be numeric" },
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">
-                          Phone (optional)
-                        </FormLabel>
+                        <FormLabel className="text-lg font-semibold">Phone (optional)</FormLabel>
                         <FormControl>
-                          <Input
-                            className="text-xl p-3 font-medium"
-                            type="tel"
-                            placeholder="Phone Number"
-                            {...field}
-                          />
+                          <Input className="text-xl p-3 font-medium" type="tel" placeholder="Phone" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -350,25 +263,14 @@ export default function AccountForm() {
                     name="birthDate"
                     rules={{
                       required: "Birth date is required",
-                      validate: (value) => {
-                        if (!value) return "Birth date is required";
-                        if (new Date(value) > new Date()) {
-                          return "Birth date cannot be in the future";
-                        }
-                        return true;
-                      },
+                      validate: (value) =>
+                        !value ? "Birth date is required" : new Date(value) > new Date() ? "Birth date cannot be in the future" : true,
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">
-                          Birth Date
-                        </FormLabel>
+                        <FormLabel className="text-lg font-semibold">Birth Date</FormLabel>
                         <FormControl>
-                          <Input
-                            className="text-xl p-3 font-medium"
-                            type="date"
-                            {...field}
-                          />
+                          <Input className="text-xl p-3 font-medium" type="date" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -383,16 +285,11 @@ export default function AccountForm() {
                   rules={{ required: "Gender is required" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-lg font-semibold">
-                        Gender
-                      </FormLabel>
+                      <FormLabel className="text-lg font-semibold">Gender</FormLabel>
                       <FormControl>
                         <div className="flex gap-6 text-lg flex-wrap">
                           {["male", "female", "other"].map((value) => (
-                            <label
-                              key={value}
-                              className="inline-flex items-center space-x-3 cursor-pointer"
-                            >
+                            <label key={value} className="inline-flex items-center space-x-3 cursor-pointer">
                               <input
                                 type="radio"
                                 value={value}
@@ -413,7 +310,7 @@ export default function AccountForm() {
             </div>
 
             <div className="flex justify-center mt-10">
-              <Button className="text-lg px-10 py-4" type="submit">
+              <Button type="submit" className="text-lg px-10 py-4">
                 Update Account
               </Button>
             </div>
@@ -440,11 +337,8 @@ export default function AccountForm() {
                 maxZoom={5}
               />
             </div>
-
             <div className="mt-4 flex justify-end gap-4">
-              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>
-                Cancel
-              </Button>
+              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>Cancel</Button>
               <Button onClick={handleCropConfirm}>Confirm Crop</Button>
             </div>
           </div>

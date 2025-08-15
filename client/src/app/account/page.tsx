@@ -347,7 +347,7 @@ export default function AccountManagement() {
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-5 md:flex-row">
-                  <Link href="/stock/create">
+                  <Link href="/account/create">
                     <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
                       Create
                     </Button>
@@ -364,7 +364,7 @@ export default function AccountManagement() {
                     {table.getHeaderGroups().map((headerGroup) => (
                       <TableRow key={headerGroup.id}>
                         {headerGroup.headers.map((header) => (
-                          <TableHead key={header.id}>
+                          <TableHead key={header.id}  className="px-20 py-2 text-left">
                             {header.isPlaceholder
                               ? null
                               : flexRender(
@@ -393,7 +393,7 @@ export default function AccountManagement() {
                             return (
                               <TableCell
                                 key={cell.id}
-                                className={isClickable ? "cursor-pointer" : ""}
+                                className={`px-20 py-2 text-left ${isClickable ? "cursor-pointer" : ""}`}
                                 onClick={() => {
                                   if (isClickable)
                                     router.push(

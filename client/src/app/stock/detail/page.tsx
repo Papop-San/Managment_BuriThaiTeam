@@ -86,7 +86,7 @@ export default function AccountForm() {
     },
   });
 
-  // Cropper State
+  // State สำหรับ cropper
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -143,9 +143,9 @@ export default function AccountForm() {
 
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-6">
-
-            {/* ================= Avatar ================= */}
             <div className="flex flex-col md:flex-row gap-8 md:gap-16">
+
+              {/* Avatar */}
               <div className="flex-shrink-0 w-full md:w-[320px] flex flex-col items-center">
                 <FormField
                   control={form.control}
@@ -189,9 +189,8 @@ export default function AccountForm() {
                 />
               </div>
 
-              {/* ================= Personal Info ================= */}
+              {/* Inputs */}
               <div className="flex-grow space-y-8 w-full">
-                {/* Username & Email */}
                 <FormField
                   control={form.control}
                   name="username"
@@ -206,6 +205,7 @@ export default function AccountForm() {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -224,7 +224,6 @@ export default function AccountForm() {
                   )}
                 />
 
-                {/* First & Last Name */}
                 <div className="grid gap-8 md:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -240,6 +239,7 @@ export default function AccountForm() {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="lastName"
@@ -256,7 +256,6 @@ export default function AccountForm() {
                   />
                 </div>
 
-                {/* Phone & Birth Date */}
                 <div className="grid gap-8 md:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -274,6 +273,7 @@ export default function AccountForm() {
                       </FormItem>
                     )}
                   />
+
                   <FormField
                     control={form.control}
                     name="birthDate"
@@ -325,7 +325,7 @@ export default function AccountForm() {
               </div>
             </div>
 
-            {/* ================= Submit ================= */}
+            {/* Submit */}
             <div className="flex justify-center mt-10">
               <Button type="submit" className="text-lg px-10 py-4">
                 Create Account
@@ -335,7 +335,7 @@ export default function AccountForm() {
         </CardContent>
       </Card>
 
-      {/* ================= Modal Crop ================= */}
+      {/* Modal Crop */}
       {isCropModalOpen && imageSrc && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 max-w-md w-full">
@@ -354,8 +354,11 @@ export default function AccountForm() {
                 maxZoom={5}
               />
             </div>
+
             <div className="mt-4 flex justify-end gap-4">
-              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleCropConfirm}>Confirm Crop</Button>
             </div>
           </div>
