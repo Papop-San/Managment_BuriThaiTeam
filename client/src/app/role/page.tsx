@@ -87,7 +87,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
     accessorKey: "userId",
     header: ({ column }) => (
       <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>User ID</span>
@@ -95,7 +95,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
       </div>
     ),
     cell: ({ row }) => (
-      <div className="text-center text-lg font-medium w-full">
+      <div className="text-center text-base font-normal w-full">
         {row.getValue("userId")}
       </div>
     ),
@@ -106,7 +106,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
     accessorFn: (row) => `${row.fistName} ${row.lastName}`,
     header: ({ column }) => (
       <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>Account Name</span>
@@ -114,7 +114,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
       </div>
     ),
     cell: ({ row }) => (
-      <div className="text-lg font-medium text-center">
+      <div className="text-base font-normal text-center">
         {`${row.original.fistName} ${row.original.lastName}`}
       </div>
     ),
@@ -124,7 +124,7 @@ export const columns: ColumnDef<AccountInterface>[] = [
     accessorKey: "email",
     header: ({ column }) => (
       <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
+        className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
         <span>Email</span>
@@ -132,15 +132,20 @@ export const columns: ColumnDef<AccountInterface>[] = [
       </div>
     ),
     cell: ({ row }) => (
-      <div className="text-center">{row.getValue("email")}</div>
+      <div className="text-center text-base font-normal">
+        {row.getValue("email")}
+      </div>
     ),
   },
   {
     accessorKey: "role",
-    header: () => <div className="text-lg font-semibold text-center">Role</div>,
+    header: () => (
+      <div className="text-base font-normal text-center">Role</div>
+    ),
     cell: ({ row }) => <RoleCell value={row.original.role} row={row.original} />,
   },
 ];
+
 
 export default function Role() {
   const [sorting, setSorting] = React.useState<SortingState>([]);

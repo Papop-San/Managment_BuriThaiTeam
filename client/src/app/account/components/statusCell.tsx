@@ -4,37 +4,31 @@ import React, { useState } from "react";
 
 type StatusCellProps<TData extends { status_active: boolean }> = {
   value: boolean;
-  row: TData;
-  data: TData[];
-  setData: React.Dispatch<React.SetStateAction<TData[]>>;
+  onChange: (newValue: boolean) => void;
 };
 
 export const StatusCell = <TData extends { status_active: boolean }>({
   value,
-  row,
-  data,
-  setData,
+  onChange,
 }: StatusCellProps<TData>) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
   const handleSave = () => {
-    setData(
-      data.map((r) => (r === row ? { ...r, status_active: tempValue } : r))
-    );
+    onChange(tempValue); // อัปเดตค่าใน parent
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setTempValue(row.status_active);
+    setTempValue(value); // ย้อนกลับค่าเดิม
     setIsEditing(false);
   };
 
   return (
-    <div className="flex items-center gap-3 text-lg font-medium">
+    <div className="flex items-center justify-center gap-2 text-sm font-medium">
       {/* วงกลมสี */}
       <span
-        className={`w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0 ${
+        className={`w-3 h-3 rounded-full border-2 border-gray-300 flex-shrink-0 ${
           tempValue ? "bg-green-500" : "bg-red-500"
         }`}
       ></span>
@@ -59,7 +53,6 @@ export const StatusCell = <TData extends { status_active: boolean }>({
             <option value="true">Active</option>
             <option value="false">Inactive</option>
           </select>
-
           <button
             className="ml-2 px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
             onClick={handleSave}

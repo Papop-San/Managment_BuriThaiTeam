@@ -1,21 +1,24 @@
 "use client";
-import React, { useState } from "react";
-import { SidebarComponent } from "@/app/components/Sidebar";
-import { StatusCell } from "./components/statusCell";
+
+import * as React from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import {
   ColumnDef,
-  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   SortingState,
   useReactTable,
-  VisibilityState,
 } from "@tanstack/react-table";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -33,16 +36,12 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
-import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
-import { Input } from "@/components/ui/input";
+import { SidebarComponent } from "@/app/components/Sidebar";
+import { StatusCell } from "./components/statusCell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
+import { ArrowUpDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
 
 export type AccountInterface = {
   userId: number;
@@ -50,7 +49,6 @@ export type AccountInterface = {
   lastName: string;
   userImg: string;
   create_date: Date;
-  last_login: Date;
   status_active: boolean;
 };
 
@@ -61,7 +59,6 @@ export const accountMock: AccountInterface[] = [
     lastName: "Doe",
     userImg: "https://randomuser.me/api/portraits/men/32.jpg",
     create_date: new Date("2025-06-10T10:15:00"),
-    last_login: new Date("2025-08-09T09:30:00"),
     status_active: true,
   },
   {
@@ -70,256 +67,157 @@ export const accountMock: AccountInterface[] = [
     lastName: "Smith",
     userImg: "https://randomuser.me/api/portraits/women/45.jpg",
     create_date: new Date("2025-05-25T14:45:00"),
-    last_login: new Date("2025-08-08T16:20:00"),
     status_active: false,
-  },
-  {
-    userId: 3,
-    fistName: "Alex",
-    lastName: "Johnson",
-    userImg: "https://randomuser.me/api/portraits/men/77.jpg",
-    create_date: new Date("2025-07-01T08:10:00"),
-    last_login: new Date("2025-08-10T11:50:00"),
-    status_active: true,
-  },
-  {
-    userId: 4,
-    fistName: "Emily",
-    lastName: "Davis",
-    userImg: "https://randomuser.me/api/portraits/women/12.jpg",
-    create_date: new Date("2025-06-20T09:30:00"),
-    last_login: new Date("2025-08-07T14:10:00"),
-    status_active: true,
-  },
-  {
-    userId: 5,
-    fistName: "Michael",
-    lastName: "Brown",
-    userImg: "https://randomuser.me/api/portraits/men/54.jpg",
-    create_date: new Date("2025-04-15T11:00:00"),
-    last_login: new Date("2025-08-06T10:00:00"),
-    status_active: false,
-  },
-  {
-    userId: 6,
-    fistName: "Sophia",
-    lastName: "Wilson",
-    userImg: "https://randomuser.me/api/portraits/women/65.jpg",
-    create_date: new Date("2025-07-10T12:45:00"),
-    last_login: new Date("2025-08-09T09:00:00"),
-    status_active: true,
-  },
-  {
-    userId: 7,
-    fistName: "David",
-    lastName: "Martinez",
-    userImg: "https://randomuser.me/api/portraits/men/81.jpg",
-    create_date: new Date("2025-05-05T08:20:00"),
-    last_login: new Date("2025-08-05T16:15:00"),
-    status_active: true,
-  },
-  {
-    userId: 8,
-    fistName: "Olivia",
-    lastName: "Garcia",
-    userImg: "https://randomuser.me/api/portraits/women/34.jpg",
-    create_date: new Date("2025-06-18T07:40:00"),
-    last_login: new Date("2025-08-08T11:25:00"),
-    status_active: false,
-  },
-  {
-    userId: 9,
-    fistName: "James",
-    lastName: "Lee",
-    userImg: "https://randomuser.me/api/portraits/men/23.jpg",
-    create_date: new Date("2025-07-15T13:30:00"),
-    last_login: new Date("2025-08-10T08:50:00"),
-    status_active: true,
-  },
-  {
-    userId: 10,
-    fistName: "Isabella",
-    lastName: "Taylor",
-    userImg: "https://randomuser.me/api/portraits/women/56.jpg",
-    create_date: new Date("2025-05-30T14:15:00"),
-    last_login: new Date("2025-08-09T10:05:00"),
-    status_active: true,
   },
 ];
 
-export const columns: ColumnDef<AccountInterface>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value: boolean) =>
-          table.toggleAllPageRowsSelected(value)
-        }
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: "userId",
-    header: ({ column }) => (
-      <div
-        className="flex items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Order ID</span>
-        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-lg font-medium">{row.getValue("userId")}</div>
-    ),
-  },
+export default function Account() {
+  const router = useRouter();
+  const [data, setData] = useState<AccountInterface[]>(accountMock);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState("");
 
-  {
-    id: "accountName",
-    header: () => <div className="text-lg font-semibold">Account Name</div>,
-    cell: ({ row }) => {
-      const imgSrc = row.original.userImg;
-      const firstName = row.original.fistName;
-      const lastName = row.original.lastName;
 
-      return (
-        <div className="flex items-center space-x-3 text-lg font-medium">
+  
+  const columns: ColumnDef<AccountInterface>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value: boolean) =>
+            table.toggleAllPageRowsSelected(value)
+          }
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+        />
+      ),
+    },
+
+    {
+      accessorKey: "userId",
+      header: ({ column }) => (
+        <div
+          className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          <span>User ID</span>
+          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div
+          className="text-center text-blue-600 cursor-pointer hover:underline"
+          onClick={() => router.push(`/account/detail/${row.original.userId}`)}
+        >
+          {row.original.userId}
+        </div>
+      ),
+      sortingFn: "alphanumeric",
+    },
+    {
+      accessorKey: "customerName",
+      size: 200,
+      header: ({ column }) => (
+        <div
+          className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          <span>ชื่อลูกค้า</span>
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center space-x-2 cursor-pointer">
           <Avatar>
-            <AvatarImage src={imgSrc} alt={`${firstName} ${lastName}`} />
+            <AvatarImage
+              src={row.original.userImg}
+              alt={`${row.original.fistName} ${row.original.lastName}`}
+            />
             <AvatarFallback>
-              {firstName[0]}
-              {lastName[0]}
+              {row.original.fistName[0]}
+              {row.original.lastName[0]}
             </AvatarFallback>
           </Avatar>
-          <span>{`${firstName} ${lastName}`}</span>
+          <span>{`${row.original.fistName} ${row.original.lastName}`}</span>
         </div>
-      );
+      ),
+      sortingFn: "alphanumeric",
+    },      
+    {
+       accessorKey: "create_date",
+       size: 140,
+       header: ({ column }) => (
+         <div
+           className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+         >
+           <span>Create Date</span>
+           <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+         </div>
+       ),
+       cell: ({ row }) => (
+         <ClientOnlyDate date={new Date(row.getValue("create_date"))} />
+       ),
+     },
+    {
+      accessorKey: "status_active",
+      header: "Status",
+      cell: ({ row }) => (
+        <StatusCell
+          value={row.getValue("status_active")}
+          onChange={(newValue) => {
+            setData((prev) =>
+              prev.map((item) =>
+                item.userId === row.original.userId
+                  ? { ...item, status_active: newValue }
+                  : item
+              )
+            );
+          }}
+        />
+      ),
     },
-  },
-  {
-    accessorKey: "create_date",
-    header: ({ column }) => (
-      <div
-        className="flex items-center space-x-2 cursor-pointer select-none text-lg font-semibold"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Order Date</span>
-        <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => {
-      const date: Date = row.getValue("create_date");
-      return (
-        <div className="text-lg font-medium">
-          <ClientOnlyDate date={date} />
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "status_active",
-    header: () => <div className="text-lg font-semibold">Status</div>,
-    cell: ({ row }) => (
-      <StatusCell
-      value={row.getValue("status_active")}
-      row={row.original}
-      data={data}      
-      setData={setData} 
-    />
-    
-    ),
-  }
-];
+  ];
 
-export default function AccountManagement() {
-  const router = useRouter();
-  const [data, setData] = React.useState<AccountInterface[]>(accountMock); // ✅ state ของ table
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
-  const [rowSelection, setRowSelection] = React.useState({});
-  const [searchValue, setSearchValue] = React.useState("");
 
+  
   const table = useReactTable({
     data,
-    columns: columns.map((col): ColumnDef<AccountInterface> => {
-      if (col.accessorKey === "status_active") {
-        return {
-          ...col,
-          cell: (context: CellContext<AccountInterface, boolean>) => (
-            <StatusCell
-              value={context.getValue()}
-              row={context.row.original}
-              data={data}
-              setData={setData}
-            />
-          ),
-        };
-      }
-      return col as ColumnDef<AccountInterface>;
-    }),
+    columns,
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setSearchValue,
-    globalFilterFn: (row, columnId, filterValue) => {
-      const fullName =
-        `${row.original.fistName} ${row.original.lastName}`.toLowerCase();
-      return fullName.includes(String(filterValue).toLowerCase());
-    },
-    state: {
-      sorting,
-      columnFilters,
-      columnVisibility,
-      rowSelection,
-      globalFilter: searchValue,
-    },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      },
-    },
+    initialState: { pagination: { pageSize: 20 } },
   });
+
   const pageCount = table.getPageCount();
   const pageIndex = table.getState().pagination.pageIndex;
+
   const paginationRange = React.useMemo(() => {
     const totalPages = pageCount;
     const currentPage = pageIndex + 1;
-
     const delta = 2;
     const range: (number | "...")[] = [];
     let l: number | undefined;
-
     for (let i = 1; i <= totalPages; i++) {
       if (
         i === 1 ||
         i === totalPages ||
         (i >= currentPage - delta && i <= currentPage + delta)
       ) {
-        if (l !== undefined) {
-          if (i - l > 1) {
-            range.push("...");
-          }
-        }
+        if (l !== undefined && i - l > 1) range.push("...");
         range.push(i);
         l = i;
       }
@@ -329,164 +227,141 @@ export default function AccountManagement() {
 
   return (
     <SidebarComponent>
-      <div>
-        <div className="overflow-hidden rounded-md border mx-auto">
-          <Card>
-            <div className="text-center mt-5">
-              <p className="text-4xl font-semibold ">Account Management</p>
+      <div className="px-5">
+        <Card>
+          <div className="text-center mt-5">
+            <p className="text-4xl font-semibold">Account Management</p>
+          </div>
+
+          <div className="flex justify-between items-center mb-4 mx-7">
+            <Input
+              placeholder="Search account..."
+              value={globalFilter}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="w-80"
+            />
+            <div className="flex flex-wrap items-center gap-5 md:flex-row">
+              <Link href="/account/create">
+                <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
+                  Create
+                </Button>
+              </Link>
+              <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
+                Delete
+              </Button>
             </div>
+          </div>
 
-            <CardContent>
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <Input
-                    placeholder="Search product..."
-                    value={searchValue}
-                    onChange={(e) => setSearchValue(e.target.value)}
-                    className="w-100"
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-5 md:flex-row">
-                  <Link href="/account/create">
-                    <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
-                      Create
-                    </Button>
-                  </Link>
-                  <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-                    Delete
-                  </Button>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-md border">
-                <Table>
-                  <TableHeader>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <TableRow key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
-                          <TableHead key={header.id}  className="px-20 py-2 text-left">
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </TableHead>
+          <CardContent>
+            <div className="overflow-hidden rounded-md border w-full">
+              <Table className="w-full">
+                <TableHeader>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <TableRow key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} className="text-center">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableHeader>
+                <TableBody>
+                  {table.getRowModel().rows.length ? (
+                    table.getRowModel().rows.map((row) => (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="text-center">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
                         ))}
                       </TableRow>
-                    ))}
-                  </TableHeader>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={columns.length}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-                  <TableBody>
-                    {table.getRowModel().rows.length ? (
-                      table.getRowModel().rows.map((row) => (
-                        <TableRow
-                          key={row.original.userId}
-                          data-state={row.getIsSelected() && "selected"}
-                        >
-                          {row.getVisibleCells().map((cell) => {
-                            // ให้คลิกได้เฉพาะ userId กับ accountName
-                            const isClickable =
-                              cell.column.id === "userId" ||
-                              cell.column.id === "accountName";
+            {/* Pagination */}
+            <div className="flex items-center space-x-2 py-4 justify-center">
+              <Pagination className="flex justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!table.getCanPreviousPage()) return;
+                        table.previousPage();
+                      }}
+                      className={
+                        table.getCanPreviousPage()
+                          ? ""
+                          : "pointer-events-none opacity-50 cursor-not-allowed"
+                      }
+                    />
+                  </PaginationItem>
 
-                            return (
-                              <TableCell
-                                key={cell.id}
-                                className={`px-20 py-2 text-left ${isClickable ? "cursor-pointer" : ""}`}
-                                onClick={() => {
-                                  if (isClickable)
-                                    router.push(
-                                      `/account/detail/${row.original.userId}`
-                                    );
-                                }}
-                              >
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
-                              </TableCell>
-                            );
-                          })}
-                        </TableRow>
-                      ))
+                  {paginationRange.map((page, idx) =>
+                    page === "..." ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
                     ) : (
-                      <TableRow>
-                        <TableCell
-                          colSpan={columns.length}
-                          className="h-24 text-center"
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={
+                            page === table.getState().pagination.pageIndex + 1
+                          }
+                          onClick={(e) => {
+                            e.preventDefault();
+                            table.setPageIndex(page - 1);
+                          }}
                         >
-                          No results.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              {/* pagination */}
-              <div className="flex items-center space-x-2 py-4">
-                <Pagination className="justify-end">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!table.getCanPreviousPage()) return;
-                          table.previousPage();
-                        }}
-                        className={
-                          table.getCanPreviousPage()
-                            ? ""
-                            : "pointer-events-none opacity-50 cursor-not-allowed"
-                        }
-                      />
-                    </PaginationItem>
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
 
-                    {paginationRange.map((page, idx) =>
-                      page === "..." ? (
-                        <PaginationItem key={`ellipsis-${idx}`}>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            isActive={
-                              page === table.getState().pagination.pageIndex + 1
-                            }
-                            onClick={(e) => {
-                              e.preventDefault();
-                              table.setPageIndex(page - 1);
-                            }}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )
-                    )}
-
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!table.getCanNextPage()) return;
-                          table.nextPage();
-                        }}
-                        className={
-                          table.getCanNextPage()
-                            ? ""
-                            : "pointer-events-none opacity-50 cursor-not-allowed"
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!table.getCanNextPage()) return;
+                        table.nextPage();
+                      }}
+                      className={
+                        table.getCanNextPage()
+                          ? ""
+                          : "pointer-events-none opacity-50 cursor-not-allowed"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </SidebarComponent>
   );
