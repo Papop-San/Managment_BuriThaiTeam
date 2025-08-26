@@ -77,8 +77,6 @@ export default function Account() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
-
-  
   const columns: ColumnDef<AccountInterface>[] = [
     {
       id: "select",
@@ -123,7 +121,8 @@ export default function Account() {
       sortingFn: "alphanumeric",
     },
     {
-      accessorKey: "customerName",
+      accessorFn: (row) => `${row.fistName} ${row.lastName}`, // ใช้ accessorFn แทน accessorKey
+      id: "customerName", // ต้องใส่ id ถ้าใช้ accessorFn
       size: 200,
       header: ({ column }) => (
         <div
@@ -150,23 +149,24 @@ export default function Account() {
         </div>
       ),
       sortingFn: "alphanumeric",
-    },      
+    },
+
     {
-       accessorKey: "create_date",
-       size: 140,
-       header: ({ column }) => (
-         <div
-           className="flex items-center justify-center space-x-1 cursor-pointer select-none"
-           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-         >
-           <span>Create Date</span>
-           <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-         </div>
-       ),
-       cell: ({ row }) => (
-         <ClientOnlyDate date={new Date(row.getValue("create_date"))} />
-       ),
-     },
+      accessorKey: "create_date",
+      size: 140,
+      header: ({ column }) => (
+        <div
+          className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          <span>Create Date</span>
+          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <ClientOnlyDate date={new Date(row.getValue("create_date"))} />
+      ),
+    },
     {
       accessorKey: "status_active",
       header: "Status",
@@ -187,8 +187,6 @@ export default function Account() {
     },
   ];
 
-
-  
   const table = useReactTable({
     data,
     columns,
