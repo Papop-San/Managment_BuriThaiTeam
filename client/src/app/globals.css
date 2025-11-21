@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+:root{
+ zoom: 90%;
+  font-size: 1rem;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

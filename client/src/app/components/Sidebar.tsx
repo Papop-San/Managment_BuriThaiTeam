@@ -13,40 +13,36 @@ interface SidebarComponentProps {
   children: ReactNode;
 }
 
+const menuItems = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/account", label: "Account Management" },
+  { href: "/role", label: "Role Management" },
+  { href: "/stock", label: "Stock Management" },
+];
+
 export function SidebarComponent({ children }: SidebarComponentProps) {
   return (
     <SidebarProvider>
-      {/* เอา min-h-screen ออก เพื่อให้ความสูงตามเนื้อหา */}
       <div className="flex w-full h-full">
         <Sidebar className="h-full">
           <SidebarHeader className="text-center">
             <Link href="/dashboard" className="block py-2 hover:underline">
-              <p className="text-3xl font-semibold">Buri Thai Team</p>
+              <p className="text-2xl font-semibold">Buri Thai Team</p>
             </Link>
           </SidebarHeader>
 
           <SidebarContent>
             <div className="flex flex-col gap-2 p-3">
-              <Link href="/dashboard" >
-                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Dashboard
-                </Button>
-              </Link>
-              <Link href="/account">
-                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Account Management
-                </Button>
-              </Link>
-              <Link href="/role">
-                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Role Mangement
-                </Button>
-              </Link>
-              <Link href="/stock">
-                <Button variant="secondary"  className="w-full cursor-auto hover:cursor-pointer">
-                  Stock Management
-                </Button>
-              </Link>
+              {menuItems.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <Button
+                    variant="secondary"
+                    className="w-full cursor-auto hover:cursor-pointer"
+                  >
+                    {item.label}
+                  </Button>
+                </Link>
+              ))}
             </div>
           </SidebarContent>
 

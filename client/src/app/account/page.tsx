@@ -16,7 +16,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -122,7 +122,7 @@ export default function Account() {
     },
     {
       accessorFn: (row) => `${row.fistName} ${row.lastName}`, // ใช้ accessorFn แทน accessorKey
-      id: "customerName", // ต้องใส่ id ถ้าใช้ accessorFn
+      id: "customerName", 
       size: 200,
       header: ({ column }) => (
         <div
@@ -135,7 +135,7 @@ export default function Account() {
       ),
       cell: ({ row }) => (
         <div className="flex items-center justify-center space-x-2 cursor-pointer">
-          <Avatar>
+          <Avatar className=" w-9 h-9 m-2">
             <AvatarImage
               src={row.original.userImg}
               alt={`${row.original.fistName} ${row.original.lastName}`}
@@ -145,7 +145,7 @@ export default function Account() {
               {row.original.lastName[0]}
             </AvatarFallback>
           </Avatar>
-          <span>{`${row.original.fistName} ${row.original.lastName}`}</span>
+          <span className="mx-3 text-base">{`${row.original.fistName} ${row.original.lastName}`}</span>
         </div>
       ),
       sortingFn: "alphanumeric",
@@ -156,7 +156,7 @@ export default function Account() {
       size: 140,
       header: ({ column }) => (
         <div
-          className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+          className="flex items-center justify-center sฟpace-x-1 cursor-pointer select-none"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
           <span>Create Date</span>
@@ -255,7 +255,7 @@ export default function Account() {
               <Table className="w-full">
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
+                    <TableRow key={headerGroup.id} >
                       {headerGroup.headers.map((header) => (
                         <TableHead key={header.id} className="text-center">
                           {header.isPlaceholder
@@ -298,10 +298,9 @@ export default function Account() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center space-x-2 py-4 justify-center">
-              <Pagination className="flex justify-end">
-                <PaginationContent>
-                  <PaginationItem>
+            <div className="flex items-center space-x-2 py-4 justify-end">              <Pagination className="flex justify-end">
+            <PaginationContent className="w-full justify-end">
+            <PaginationItem>
                     <PaginationPrevious
                       href="#"
                       onClick={(e) => {

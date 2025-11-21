@@ -511,9 +511,9 @@ export function ChartBarStackedTop5ByMonth() {
 </Select>
       </CardHeader>
 
-      <CardContent className="flex flex-row gap-20 justify-center">
+      <CardContent className="flex flex-row gap-x-40r justify-center">
         {/* Bar chart */}
-        <div style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
+        <div style={{ flex: 1, minWidth: 0, maxWidth: 1000 }}>
           <BarChart
             key={filterBy}
             width={900}
@@ -522,7 +522,7 @@ export function ChartBarStackedTop5ByMonth() {
             barCategoryGap={10}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="time" /> {/* แก้จาก month เป็น time */}
+            <XAxis dataKey="time" /> 
             <Tooltip
               wrapperStyle={{ whiteSpace: "nowrap" }}
               contentStyle={{
@@ -532,7 +532,7 @@ export function ChartBarStackedTop5ByMonth() {
                 padding: 8,
               }}
             />
-            <Legend />
+           
             {top5Products.map((productName, index) => (
               <Bar
                 key={`${productName}-${index}`}
