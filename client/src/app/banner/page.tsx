@@ -5,7 +5,9 @@ import { useState } from "react";
 import { SidebarComponent } from "@/app/components/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
+import { BannerSwitch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+
 import {
   Table,
   TableBody,
@@ -130,7 +132,7 @@ export default function Banner() {
       ),
       cell: ({ row }) => (
         <div className="text-left">
-          <Switch
+          <BannerSwitch
             checked={row.original.is_active}
             onCheckedChange={(checked: boolean) =>
               setData((prev) =>
@@ -187,6 +189,20 @@ export default function Banner() {
         <Card>
           <div className="text-center mt-5">
             <p className="text-4xl font-semibold">Banner Management</p>
+          </div>
+
+          <div className="flex justify-end items-center mb-4 mx-7">
+          
+            <div className="flex  gap-5 md:flex-row">
+             
+                <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
+                  Create
+                </Button>
+       
+              <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
+                Delete
+              </Button>
+            </div>
           </div>
 
           <CardContent>

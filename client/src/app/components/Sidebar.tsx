@@ -18,6 +18,7 @@ const menuItems = [
   { href: "/account", label: "Account Management" },
   { href: "/role", label: "Role Management" },
   { href: "/stock", label: "Stock Management" },
+  { href: "/banner", label: "Banner" },
 ];
 
 export function SidebarComponent({ children }: SidebarComponentProps) {
