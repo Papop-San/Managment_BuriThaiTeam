@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BannerSwitch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import {OrderSelectCell} from "./components/OrderSelectCell"
 
 import {
   Table,
@@ -43,10 +44,10 @@ export type BannerInterface = {
   order_banner: number;
 };
 
-export const bannerMock: BannerInterface[] = Array.from({ length: 100 }, (_, i) => ({
+export const bannerMock: BannerInterface[] = Array.from({ length: 4 }, (_, i) => ({
     bannerId: i + 1,
     url: `https://picsum.photos/1200/400?random=${i + 1}`,
-    is_active: Math.random() < 0.8, // 80% chance เป็น true
+    is_active: Math.random() < 0.8, 
     order_banner: i + 1,
   }));
 
@@ -120,7 +121,19 @@ export default function Banner() {
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-left">{row.original.order_banner}</div>
+        <OrderSelectCell
+          value={row.original.order_banner}
+          maxOrder={data.length} // จำนวนสูงสุด
+          onSubmit={(newValue) =>
+            setData((prev) =>
+              prev.map((item) =>
+                item.bannerId === row.original.bannerId
+                  ? { ...item, order_banner: newValue }
+                  : item
+              )
+            )
+          }
+        />
       ),
     },
     {

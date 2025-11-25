@@ -8,17 +8,29 @@ import {
   SidebarHeader,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import { 
+  Home, 
+  ShoppingCart, 
+  Box, 
+  Image, 
+  User, 
+  Shield,
+  CircleDollarSign
+} from "lucide-react"; 
 
 interface SidebarComponentProps {
   children: ReactNode;
 }
 
+// เพิ่ม icon สำหรับแต่ละ menu item
 const menuItems = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/account", label: "Account Management" },
-  { href: "/role", label: "Role Management" },
-  { href: "/stock", label: "Stock Management" },
-  { href: "/banner", label: "Banner" },
+  { href: "/dashboard", label: "Dashboard", icon: <Home className="w-5 h-5 mr-2" /> },
+  { href: "/order", label: "Order Management", icon: <ShoppingCart className="w-5 h-5 mr-2" /> },
+  { href: "/stock", label: "Stock Management", icon: <Box className="w-5 h-5 mr-2" /> },
+  { href: "/banner", label: "Banner", icon: <Image className="w-5 h-5 mr-2" /> },
+  { href: "/account", label: "Account Management", icon: <User className="w-5 h-5 mr-2" /> },
+  { href: "/role", label: "Role Management", icon: <Shield className="w-5 h-5 mr-2" /> },
+  { href: "/payment", label: "Payment Account", icon: <CircleDollarSign className="w-5 h-5 mr-2" /> },
 ];
 
 export function SidebarComponent({ children }: SidebarComponentProps) {
@@ -38,8 +50,9 @@ export function SidebarComponent({ children }: SidebarComponentProps) {
                 <Link key={item.href} href={item.href}>
                   <Button
                     variant="secondary"
-                    className="w-full cursor-auto hover:cursor-pointer"
+                    className="w-full flex items-center cursor-auto hover:cursor-pointer justify-start"
                   >
+                    {item.icon}
                     {item.label}
                   </Button>
                 </Link>

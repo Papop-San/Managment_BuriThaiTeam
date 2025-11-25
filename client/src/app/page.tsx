@@ -1,6 +1,7 @@
-"use client"; // mark this as a client component since it uses useState
+"use client"; 
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,11 +11,40 @@ export default function LoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Replace with your login logic (API call)
-    alert(`Logging in with email: ${identifier} and password: ${password}`);
+    setError(""); 
+
+    try{
+      const res = await fetch("http://localhost:8080/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ identifier, password }),
+        credentials: "include", 
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+   
+        setError(data.message || "Login failed");
+        return;
+      }
+
+      router.push("/dashboard");
+
+
+    }catch (error) {
+      console.error("Login error:", error);
+      setError("Something went wrong. Please try again.");
+
+    }
+
   };
 
   return (
@@ -24,6 +54,7 @@ export default function LoginPage() {
         className="bg-white dark:bg-gray-800 p-8 rounded-md shadow-md w-full max-w-xl h-full max-h-screen "
       >
         <h1 className="text-2xl font-semibold mb-6 text-center">Sign In</h1>
+        {error && <p className="text-red-500 mb-4">{error}</p>}
 
         <div className="mb-4">
           <Label htmlFor="identifier" className="py-3">
