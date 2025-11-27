@@ -4,6 +4,8 @@ import * as React from "react";
 import { useState } from "react";
 import { BannerSwitch } from "@/components/ui/switch";
 import CreatePaymentForm from "./components/CreatePaymentForm";
+import { ArrowUpDown } from "lucide-react";
+
 
 import {
   ColumnDef,
@@ -96,9 +98,17 @@ export default function Payment() {
     // Banner ID
     {
       accessorKey: "bannerId",
-      header: "Banner ID",
-      cell: ({ row }) => <span>{row.original.bannerId}</span>,
+      header: ({ column }) => (
+        <div
+          className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          <span>User ID</span>
+          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+        </div>
+      ),
       sortingFn: "alphanumeric",
+      enableSorting: true,
     },
 
     // Name

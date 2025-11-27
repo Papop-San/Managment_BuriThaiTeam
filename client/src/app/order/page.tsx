@@ -34,6 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown } from "lucide-react";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
 import { EditableStatusCell } from "./components/statusCell";
+import {EditTrackingCell} from "./components/trackingCell"
 import { Input } from "@/components/ui/input";
 export type OrderInterface = {
   sku: string;
@@ -42,6 +43,7 @@ export type OrderInterface = {
   quantity: number;
   totalAmount: number;
   paymentMethod: string;
+  tracking_number: string;
   paymentStatus: "Paid" | "Pending" | "Failed";
 };
 
@@ -53,6 +55,7 @@ export const orderItemMockup: OrderInterface[] = [
     quantity: 2,
     totalAmount: 50,
     paymentMethod: "Credit Card",
+    tracking_number: "TRK-202501001",
     paymentStatus: "Paid",
   },
   {
@@ -62,6 +65,7 @@ export const orderItemMockup: OrderInterface[] = [
     quantity: 1,
     totalAmount: 120,
     paymentMethod: "PayPal",
+    tracking_number: "TRK-202501002",
     paymentStatus: "Pending",
   },
   {
@@ -71,6 +75,7 @@ export const orderItemMockup: OrderInterface[] = [
     quantity: 1,
     totalAmount: 300,
     paymentMethod: "Bank Transfer",
+    tracking_number: "TRK-202501003",
     paymentStatus: "Paid",
   },
   {
@@ -80,6 +85,7 @@ export const orderItemMockup: OrderInterface[] = [
     quantity: 3,
     totalAmount: 90,
     paymentMethod: "Cash on Delivery",
+    tracking_number: "TRK-202501004",
     paymentStatus: "Failed",
   },
   {
@@ -89,9 +95,11 @@ export const orderItemMockup: OrderInterface[] = [
     quantity: 1,
     totalAmount: 150,
     paymentMethod: "Credit Card",
+    tracking_number: "TRK-202501005",
     paymentStatus: "Paid",
   },
 ];
+
 
 export const columns: ColumnDef<OrderInterface>[] = [
   {
@@ -215,6 +223,23 @@ export const columns: ColumnDef<OrderInterface>[] = [
       />
     ),
   },
+  {
+    accessorKey: "tracking_number",
+    header: "รหัสการจัดส่ง",
+    cell: ({ row }) => {
+      const tracking = row.getValue("tracking_number") as string ?? "";
+  
+      return (
+        <EditTrackingCell
+          value={tracking}
+          onSave={(newVal) => {
+            console.log("Saved:", newVal);
+          }}
+        />
+      );
+    },
+  }
+  
 ];
 
 export default function OrderManagement() {

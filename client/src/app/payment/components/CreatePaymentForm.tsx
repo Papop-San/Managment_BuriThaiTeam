@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { BannerSwitch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   open: boolean;
@@ -71,7 +83,9 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
               }}
               placeholder="ชื่อบัญชี"
             />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
+            )}
           </div>
 
           {/* Data */}
@@ -85,7 +99,9 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
               }}
               placeholder="เบอร์ / เลขบัญชี"
             />
-            {errors.data && <p className="text-red-500 text-sm mt-1">{errors.data}</p>}
+            {errors.data && (
+              <p className="text-red-500 text-sm mt-1">{errors.data}</p>
+            )}
           </div>
 
           {/* Account Type */}
@@ -95,7 +111,7 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
               <SelectTrigger>
                 <SelectValue placeholder="เลือกประเภทบัญชี" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent side="bottom" align="start">
                 <SelectItem value="Promptpay">Promptpay</SelectItem>
                 <SelectItem value="Bank">Bank</SelectItem>
               </SelectContent>
@@ -105,18 +121,15 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
           {/* Active Switch */}
           <div className="flex items-center space-x-3">
             <Label>Active</Label>
-            <BannerSwitch
-              checked={active}
-              onCheckedChange={setActive}
-            />
+            <BannerSwitch checked={active} onCheckedChange={setActive} />
           </div>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit}>Create</Button>
+
+        <Button onClick={handleSubmit}>Create</Button>
+
+
         </DialogFooter>
       </DialogContent>
     </Dialog>
