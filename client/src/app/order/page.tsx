@@ -43,12 +43,6 @@ export type OrderInterface = {
   totalAmount: number;
   paymentMethod: string;
   paymentStatus: "Paid" | "Pending" | "Failed";
-  deliveryStatus:
-    | "Pending"
-    | "Shipped"
-    | "Delivered"
-    | "Cancelled"
-    | "Returned";
 };
 
 export const orderItemMockup: OrderInterface[] = [
@@ -60,7 +54,6 @@ export const orderItemMockup: OrderInterface[] = [
     totalAmount: 50,
     paymentMethod: "Credit Card",
     paymentStatus: "Paid",
-    deliveryStatus: "Pending",
   },
   {
     sku: "ORD-1002",
@@ -70,7 +63,6 @@ export const orderItemMockup: OrderInterface[] = [
     totalAmount: 120,
     paymentMethod: "PayPal",
     paymentStatus: "Pending",
-    deliveryStatus: "Shipped",
   },
   {
     sku: "ORD-1003",
@@ -80,7 +72,6 @@ export const orderItemMockup: OrderInterface[] = [
     totalAmount: 300,
     paymentMethod: "Bank Transfer",
     paymentStatus: "Paid",
-    deliveryStatus: "Delivered",
   },
   {
     sku: "ORD-1004",
@@ -90,7 +81,6 @@ export const orderItemMockup: OrderInterface[] = [
     totalAmount: 90,
     paymentMethod: "Cash on Delivery",
     paymentStatus: "Failed",
-    deliveryStatus: "Cancelled",
   },
   {
     sku: "ORD-1005",
@@ -100,7 +90,6 @@ export const orderItemMockup: OrderInterface[] = [
     totalAmount: 150,
     paymentMethod: "Credit Card",
     paymentStatus: "Paid",
-    deliveryStatus: "Returned",
   },
 ];
 
@@ -222,29 +211,6 @@ export const columns: ColumnDef<OrderInterface>[] = [
         }}
         onSave={(newValue) =>
           console.log("Payment updated:", newValue, "for", row.original.sku)
-        }
-      />
-    ),
-  },
-  {
-    accessorKey: "deliveryStatus",
-    header: "สถานะการจัดส่ง",
-    size: 140,
-    cell: ({ row }) => (
-      <EditableStatusCell
-        value={
-          row.getValue("deliveryStatus") as OrderInterface["deliveryStatus"]
-        }
-        options={["Pending", "Shipped", "Delivered", "Cancelled", "Returned"]}
-        colorMap={{
-          Pending: "bg-yellow-500",
-          Shipped: "bg-blue-500",
-          Delivered: "bg-green-500",
-          Cancelled: "bg-red-500",
-          Returned: "bg-gray-500",
-        }}
-        onSave={(newValue) =>
-          console.log("Delivery updated:", newValue, "for", row.original.sku)
         }
       />
     ),

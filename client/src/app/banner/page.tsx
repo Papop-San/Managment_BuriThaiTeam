@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SidebarComponent } from "@/app/components/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { BannerSwitch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import {OrderSelectCell} from "./components/OrderSelectCell"
+import { OrderSelectCell } from "./components/OrderSelectCell";
+import CreateBannerTab from "./components/CreateBannerTab";
 
 import {
   Table,
@@ -44,16 +45,21 @@ export type BannerInterface = {
   order_banner: number;
 };
 
-export const bannerMock: BannerInterface[] = Array.from({ length: 4 }, (_, i) => ({
-    bannerId: i + 1,
-    url: `https://picsum.photos/1200/400?random=${i + 1}`,
-    is_active: Math.random() < 0.8, 
-    order_banner: i + 1,
-  }));
-
 export default function Banner() {
-  const [data, setData] = useState<BannerInterface[]>(bannerMock);
+  const [data, setData] = useState<BannerInterface[]>([]);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [openCreate, setOpenCreate] = useState(false);
+
+  // สร้าง mock data ใน client เท่านั้น
+  useEffect(() => {
+    const mock: BannerInterface[] = Array.from({ length: 4 }, (_, i) => ({
+      bannerId: i + 1,
+      url: `https://picsum.photos/1200/400?random=${i + 1}`,
+      is_active: Math.random() < 0.8,
+      order_banner: i + 1,
+    }));
+    setData(mock);
+  }, []);
 
   const columns: ColumnDef<BannerInterface>[] = [
     {
@@ -87,9 +93,7 @@ export default function Banner() {
           <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
         </div>
       ),
-      cell: ({ row }) => (
-        <div className="text-left">{row.original.bannerId}</div>
-      ),
+      cell: ({ row }) => <div className="text-left">{row.original.bannerId}</div>,
       sortingFn: "alphanumeric",
     },
     {
@@ -123,7 +127,7 @@ export default function Banner() {
       cell: ({ row }) => (
         <OrderSelectCell
           value={row.original.order_banner}
-          maxOrder={data.length} // จำนวนสูงสุด
+          maxOrder={data.length}
           onSubmit={(newValue) =>
             setData((prev) =>
               prev.map((item) =>
@@ -205,13 +209,14 @@ export default function Banner() {
           </div>
 
           <div className="flex justify-end items-center mb-4 mx-7">
-          
-            <div className="flex  gap-5 md:flex-row">
-             
-                <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
-                  Create
-                </Button>
-       
+            <div className="flex gap-5 md:flex-row">
+              <Button
+                className="cursor-pointer hover:text-black hover:bg-white border border-black"
+                onClick={() => setOpenCreate(true)}
+              >
+                Create
+              </Button>
+
               <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
                 Delete
               </Button>
@@ -226,7 +231,7 @@ export default function Banner() {
                     <TableRow key={headerGroup.id}>
                       {headerGroup.headers.map((header) => {
                         let className = "px-2 py-2";
-                        if (header.id === "select") className += " pl-20"; // layout เหมือนเดิม
+                        if (header.id === "select") className += " pl-20";
                         return (
                           <TableHead key={header.id} className={className}>
                             {header.isPlaceholder
@@ -248,8 +253,7 @@ export default function Banner() {
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => {
                           let className = "px-2 py-2";
-                          if (cell.column.id === "select")
-                            className += " pl-20";
+                          if (cell.column.id === "select") className += " pl-20";
                           return (
                             <TableCell key={cell.id} className={className}>
                               {flexRender(
@@ -275,6 +279,7 @@ export default function Banner() {
               </Table>
             </div>
           </CardContent>
+
           {/* Pagination */}
           <div className="py-4">
             <Pagination className="flex justify-end w-full">
@@ -304,9 +309,7 @@ export default function Banner() {
                     <PaginationItem key={page}>
                       <PaginationLink
                         href="#"
-                        isActive={
-                          page === table.getState().pagination.pageIndex + 1
-                        }
+                        isActive={page === table.getState().pagination.pageIndex + 1}
                         onClick={(e) => {
                           e.preventDefault();
                           table.setPageIndex(page - 1);
@@ -338,6 +341,25 @@ export default function Banner() {
           </div>
         </Card>
       </div>
+
+      {/* Create Banner Modal */}
+      <CreateBannerTab
+        open={openCreate}
+        onClose={() => setOpenCreate(false)}
+        onSubmit={(data) => {
+          if (data.file) {
+            setData((prev) => [
+              ...prev,
+              {
+                bannerId: prev.length + 1,
+                url: URL.createObjectURL(data.file),
+                is_active: data.is_active,
+                order_banner: prev.length + 1,
+              },
+            ]);
+          }
+        }}
+      />
     </SidebarComponent>
   );
 }
