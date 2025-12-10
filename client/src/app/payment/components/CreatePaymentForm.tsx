@@ -129,7 +129,6 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
 
         <Button onClick={handleSubmit}>Create</Button>
 
-
         </DialogFooter>
       </DialogContent>
     </Dialog>

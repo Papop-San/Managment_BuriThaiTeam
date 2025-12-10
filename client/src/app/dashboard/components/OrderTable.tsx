@@ -45,6 +45,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+import { BestsellerProduct } from "@/types/dashboard";
+
+interface OrderChartsProps {
+  bestSellers: BestsellerProduct[];
+}
+
+
+
 export type OrderInterface = {
   id: number;
   first_name: string;
@@ -368,7 +376,7 @@ export const columns: ColumnDef<OrderInterface>[] = [
   },
 ];
 
-export function OrderTable() {
+export function OrderTable({ bestSellers }: OrderChartsProps) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []

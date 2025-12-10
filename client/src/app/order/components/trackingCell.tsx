@@ -1,22 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-type EditableStatusCellProps<T extends string> = {
-  value: T;
-  onSave?: (newValue: T) => void;
+type EditTrackingCellProps = {
+  value: string; 
+  onSave?: (newValue: string) => Promise<void> | void;
+  disabled?: boolean; // เพิ่มเพื่อ disable input
 };
 
-export function EditTrackingCell<T extends string>({
-  value,
-  onSave,
-}: EditableStatusCellProps<T>) {
+export function EditTrackingCell({ value, onSave, disabled }: EditTrackingCellProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [tempValue, setTempValue] = useState<T>(value);
+  const [tempValue, setTempValue] = useState(value);
+  const [loading, setLoading] = useState(false);
 
-  const handleSave = () => {
-    if (onSave) onSave(tempValue);
-    setIsEditing(false);
+  // sync tempValue กับ value จาก props เมื่อ value เปลี่ยน
+  useEffect(() => {
+    setTempValue(value);
+  }, [value]);
+
+  const handleSave = async () => {
+    if (tempValue === value) return; // ไม่ต้อง save ถ้าไม่เปลี่ยน
+    if (!onSave) return;
+
+    setLoading(true);
+    try {
+      await onSave(tempValue);
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -25,17 +39,14 @@ export function EditTrackingCell<T extends string>({
   };
 
   return (
-    <div className="inline-flex items-center gap-2 justify-center w-full">
+    <div className="inline-flex justify-center items-center gap-2 w-full">
       {!isEditing ? (
         <>
-          {/* ลบสีออกทั้งหมด → เหลือเป็นข้อความธรรมดา */}
-          <span className="text-sm">
-            {value}
-          </span>
-
+          <span className="text-sm">{value || "-"}</span>
           <button
-            className="ml-2 px-2 py-1 bg-gray-200 rounded text-sm"
             onClick={() => setIsEditing(true)}
+            className="px-2 py-1 bg-gray-200 rounded text-sm"
+            disabled={disabled || loading}
           >
             Edit
           </button>
@@ -43,22 +54,23 @@ export function EditTrackingCell<T extends string>({
       ) : (
         <>
           <input
-            type="text"
+            className="px-2 py-1 border rounded text-sm"
             value={tempValue}
-            onChange={(e) => setTempValue(e.target.value as T)}
-            className="px-2 py-1 border rounded text-sm w-28"
+            onChange={(e) => setTempValue(e.target.value)}
+            placeholder="Enter tracking"
+            disabled={disabled || loading}
           />
-
           <button
-            className="ml-2 px-2 py-1 bg-green-500 text-white rounded text-sm"
             onClick={handleSave}
+            className="px-2 py-1 bg-green-500 text-white rounded text-sm"
+            disabled={disabled || loading}
           >
-            Save
+            {loading ? "Saving..." : "Save"}
           </button>
-
           <button
-            className="ml-1 px-2 py-1 bg-gray-300 rounded text-sm"
             onClick={handleCancel}
+            className="px-2 py-1 bg-gray-300 rounded text-sm"
+            disabled={disabled || loading}
           >
             Cancel
           </button>

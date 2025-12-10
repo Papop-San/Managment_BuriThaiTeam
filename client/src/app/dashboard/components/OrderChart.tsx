@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
-
 import {
   Card,
   CardContent,
@@ -25,6 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BestsellerProduct } from "@/types/dashboard";
+
+interface OrderChartsProps {
+  bestSellers: BestsellerProduct[];
+}
 
 export const description = "An interactive area chart";
 
@@ -136,7 +140,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function OrderCharts() {
+export function OrderCharts({ bestSellers }: OrderChartsProps ) {
   const [timeRange, setTimeRange] = React.useState("90d");
 
   const filteredData = chartData.filter((item) => {

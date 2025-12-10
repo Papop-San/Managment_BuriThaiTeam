@@ -6,7 +6,7 @@ type EditableStatusCellProps<T extends string> = {
   value: T;
   options: T[];
   colorMap: Record<T, string>;
-  onSave?: (newValue: T) => void; 
+  onSave?: (newValue: T) => Promise<void> | void; 
 };
 
 export function EditableStatusCell<T extends string>({

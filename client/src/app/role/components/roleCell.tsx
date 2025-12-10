@@ -1,24 +1,40 @@
 "use client";
 
 import React, { useState } from "react";
-import { AccountInterface } from "@/app/role/page";
+import { RoleItem } from "@/types/role";
 
 type RoleCellProps = {
-  value: "admin" | "client";
-  row: AccountInterface;
+  value: string;
+  row: RoleItem;
 };
 
 export const RoleCell: React.FC<RoleCellProps> = ({ value, row }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempRole, setTempRole] = useState(value);
+  const safeRole = value === "admin" || value === "client" ? value : "client";
 
-  const handleSave = () => {
-    row.role = tempRole; 
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempRole, setTempRole] = useState<"admin" | "client">(safeRole);
+
+  const handleSave = async () => {
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/role-management/${row.user_id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ roleName: tempRole }),
+        }
+      );
+    } catch (err) {
+      console.error(err);
+    }
+
+    row.role = tempRole;
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setTempRole(row.role);
+    setTempRole(row.role as "admin" | "client");
     setIsEditing(false);
   };
 
@@ -36,6 +52,7 @@ export const RoleCell: React.FC<RoleCellProps> = ({ value, row }) => {
           >
             {tempRole}
           </span>
+
           <button
             className="ml-2 px-2 py-1 bg-gray-200 rounded text-sm"
             onClick={() => setIsEditing(true)}
@@ -55,12 +72,14 @@ export const RoleCell: React.FC<RoleCellProps> = ({ value, row }) => {
             <option value="admin">admin</option>
             <option value="client">client</option>
           </select>
+
           <button
             className="ml-2 px-2 py-1 bg-green-500 text-white rounded text-sm"
             onClick={handleSave}
           >
             Save
           </button>
+
           <button
             className="ml-1 px-2 py-1 bg-gray-300 rounded text-sm"
             onClick={handleCancel}

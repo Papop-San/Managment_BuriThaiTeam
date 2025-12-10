@@ -121,7 +121,7 @@ export default function Account() {
       sortingFn: "alphanumeric",
     },
     {
-      accessorFn: (row) => `${row.fistName} ${row.lastName}`, // ใช้ accessorFn แทน accessorKey
+      accessorFn: (row) => `${row.fistName} ${row.lastName}`, 
       id: "customerName", 
       size: 200,
       header: ({ column }) => (
