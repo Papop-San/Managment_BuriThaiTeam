@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
         hostname: "randomuser.me",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "buri-thai-team-ecomerce-test.s3.ap-southeast-1.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com", 
+        pathname: "/**",
+      },
     ],
   },
 };

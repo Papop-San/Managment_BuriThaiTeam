@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Cropper, { Area } from "react-easy-crop";
+import { LoaderIcon } from "lucide-react";
+import Image from "next/image";
 import {
   Form,
   FormControl,
@@ -10,15 +13,22 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { FiArrowLeft } from "react-icons/fi";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useDropzone } from "react-dropzone";
 import { FiUser } from "react-icons/fi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useParams } from "next/navigation";
+import { AccountFormValues } from "@/types/accounts";
 
-// ฟังก์ชันช่วย crop รูป
-async function getCroppedImg(imageSrc: string, croppedAreaPixels: Area): Promise<Blob | null> {
+// ---------- crop helpers ----------
+async function getCroppedImg(
+  imageSrc: string,
+  croppedAreaPixels: Area
+): Promise<Blob | null> {
   const image = await createImage(imageSrc);
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
@@ -39,12 +49,14 @@ async function getCroppedImg(imageSrc: string, croppedAreaPixels: Area): Promise
     croppedAreaPixels.height
   );
 
-  return new Promise((resolve) => canvas.toBlob((blob) => resolve(blob), "image/jpeg"));
+  return new Promise((resolve) =>
+    canvas.toBlob((blob) => resolve(blob), "image/jpeg")
+  );
 }
 
 function createImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
-    const img = new Image();
+    const img = new window.Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = reject;
@@ -52,44 +64,103 @@ function createImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-type GenderType = "male" | "female" | "other";
-
-type AccountFormValues = {
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  gender: GenderType | "";
-  birthDate?: string;
-  avatar?: File | null;
+// ---- Format Phone --------
+const formatThaiPhone = (phone: string) => {
+  const digits = phone.replace(/\D/g, "").slice(0, 10);
+  const match = digits.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+  if (!match) return digits;
+  return [match[1], match[2], match[3]].filter(Boolean).join("-");
 };
 
-const mockUserData: AccountFormValues = {
-  username: "john_doe",
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@example.com",
-  phone: "0812345678",
-  gender: "male",
-  birthDate: "1990-01-01",
-  avatar: null,
-};
+// -------- main component ---------
+export default function AccountDetailForm() {
+  const router = useRouter();
+  const params = useParams();
+  const userId = params.id;
+  const [initialValues, setInitialValues] = useState<AccountFormValues | null>(
+    null
+  );
 
-export default function AccountForm() {
-  const form = useForm<AccountFormValues>({ defaultValues: mockUserData });
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const [imageSrc, setImageSrc] = useState<string | null>("https://i.pravatar.cc/300");
+  const form = useForm<AccountFormValues>({
+    defaultValues: {
+      username: "",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      gender: "",
+      birthDate: "",
+      avatar: null,
+    },
+  });
+
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // ---------- LOAD USER DATA ----------
+  useEffect(() => {
+    async function fetchUser() {
+      setLoading(true); // เริ่ม loading
+      setError(""); // เคลียร์ error เก่า
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
+          {
+            method: "GET",
+            credentials: "include",
+            cache: "no-store",
+          }
+        );
+
+        if (!res.ok) {
+          const errData = await res.json();
+          setError(errData.message || "Failed to load user data");
+          return;
+        }
+
+        const result = await res.json();
+        const data = result.data;
+        const formattedBirth = data.birthday ? data.birthday.split("T")[0] : "";
+
+        const userData: AccountFormValues = {
+          username: data.username ?? "",
+          firstName: data.first_name ?? "",
+          lastName: data.last_name ?? "",
+          email: data.email ?? "",
+          phone: data.phone ?? "",
+          gender: data.gender ?? "",
+          birthDate: formattedBirth ?? "",
+          avatar: null,
+        };
+
+        form.reset(userData);
+        setInitialValues(userData);
+        setImageSrc(data.avatar ?? null);
+      } catch (err) {
+        console.error("LOAD USER ERROR:", err);
+        setError("Network error: Unable to fetch user data");
+      } finally {
+        setLoading(false); // จบ loading ไม่ว่า success หรือ fail
+      }
+    }
+
+    fetchUser();
+  }, [userId, form]);
+
+  // ---------- dropzone ----------
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (!acceptedFiles.length) return;
     const file = acceptedFiles[0];
     setSelectedFile(file);
+
     const reader = new FileReader();
     reader.onload = () => {
       setImageSrc(reader.result as string);
@@ -104,221 +175,360 @@ export default function AccountForm() {
     maxFiles: 1,
   });
 
-  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => setCroppedAreaPixels(croppedAreaPixels), []);
+  const onCropComplete = useCallback(
+    (_: Area, croppedAreaPixels: Area) =>
+      setCroppedAreaPixels(croppedAreaPixels),
+    []
+  );
 
   const handleCropConfirm = async () => {
     if (!imageSrc || !croppedAreaPixels) return;
+
     const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
     if (!croppedBlob) return;
 
-    const croppedFile = new File([croppedBlob], selectedFile?.name || "avatar.jpg", { type: "image/jpeg" });
+    const croppedFile = new File(
+      [croppedBlob],
+      selectedFile?.name || "avatar.jpg",
+      {
+        type: "image/jpeg",
+      }
+    );
+
     form.setValue("avatar", croppedFile, { shouldValidate: true });
     setImageSrc(URL.createObjectURL(croppedFile));
     setIsCropModalOpen(false);
   };
 
-  const onSubmit: SubmitHandler<AccountFormValues> = (data) => {
-    console.log("Form data:", data);
+  // -------- SUBMIT --------
+  const onSubmit: SubmitHandler<AccountFormValues> = async (data) => {
+    if (!initialValues) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+
+      Object.keys(data).forEach((key) => {
+        const value = data[key as keyof AccountFormValues];
+        const defaultValue = initialValues[key as keyof AccountFormValues];
+
+        if (key === "avatar" && value instanceof File) {
+          formData.append("avatar", value);
+        } else if (value !== defaultValue && value !== "" && value != null) {
+          const backendKey = key
+            .replace(/[A-Z]/g, (match) => `_${match.toLowerCase()}`)
+            .toLowerCase();
+          formData.append(backendKey, value as string);
+        }
+      });
+
+      if (formData.entries().next().done) return;
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("UPDATE ERROR:", errorData);
+        return;
+      }
+
+      console.log("Account updated successfully!");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // -------- RENDER --------
   return (
     <Form {...form}>
+      {/* Back Button */}
+      <div className="m-2">
+        <Button
+          type="button"
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={() => router.back()}
+        >
+          <FiArrowLeft /> Back
+        </Button>
+      </div>
+
       <Card className="max-w-6xl mx-auto mt-20 p-6">
         <CardHeader className="text-center">
           <CardTitle className="text-4xl font-bold">Account Details</CardTitle>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div className="flex flex-col md:flex-row gap-8 md:gap-16">
-              {/* Left: Avatar */}
-              <div className="flex-shrink-0 w-full md:w-[320px] flex flex-col items-center">
-                <FormField
-                  control={form.control}
-                  name="avatar"
-                  rules={{ required: "Avatar is required" }}
-                  render={() => (
-                    <FormItem>
-                      <FormControl>
-                        <div
-                          {...getRootProps()}
-                          className={`border-2 border-dashed cursor-pointer flex items-center justify-center mt-10 rounded-full overflow-hidden relative ${
-                            isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"
-                          }`}
-                          style={{ width: "100%", maxWidth: 300, aspectRatio: "1 / 1", minHeight: 300 }}
-                        >
-                          <input {...getInputProps()} />
-                          {imageSrc ? (
-                            <img src={imageSrc} alt="Avatar Preview" className="w-full h-full object-cover rounded-full" />
-                          ) : (
-                            <FiUser className="text-gray-400" size={100} />
-                          )}
-                        </div>
-                      </FormControl>
-                      <Button
-                        type="button"
-                        className="bg-black text-white rounded px-4 py-2 mt-5 w-full max-w-[300px]"
-                        onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
-                      >
-                        Upload Image
-                      </Button>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Right: Form Inputs */}
-              <div className="flex-grow space-y-8 w-full">
-                <div className="grid gap-8 md:grid-cols-2">
-                  {/* First Name */}
+          {loading || isSubmitting ? (
+            <div className="flex flex-col items-center justify-center py-10 space-y-3">
+              <LoaderIcon className="h-10 w-10 animate-spin text-gray-500" />
+              <p className="text-gray-500 text-lg">
+                {loading ? "Loading user data..." : "Updating data..."}
+              </p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500 text-lg">
+              {error}
+            </div>
+          ) : (
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              {/* -------- Avatar + Form -------- */}
+              <div className="flex flex-col md:flex-row gap-8 md:gap-16">
+                {/* Avatar */}
+                <div className="flex-shrink-0 w-full md:w-[320px] flex flex-col items-center">
                   <FormField
                     control={form.control}
-                    name="firstName"
-                    rules={{ required: "First name is required" }}
-                    render={({ field }) => (
+                    name="avatar"
+                    render={() => (
                       <FormItem>
-                        <FormLabel className="text-lg font-semibold">First Name</FormLabel>
                         <FormControl>
-                          <Input className="text-xl p-3 font-medium" placeholder="First Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <div
+                            {...getRootProps()}
+                            className={`border-2 border-dashed cursor-pointer flex items-center justify-center mt-10 rounded-full overflow-hidden relative ${
+                              isDragActive
+                                ? "border-blue-500 bg-blue-50"
+                                : "border-gray-300"
+                            }`}
+                            style={{
+                              width: "100%",
+                              maxWidth: 300,
+                              aspectRatio: "1 / 1",
+                              minHeight: 300,
+                              position: "relative",
+                            }}
+                          >
+                            <input {...getInputProps()} />
 
-                  {/* Last Name */}
-                  <FormField
-                    control={form.control}
-                    name="lastName"
-                    rules={{ required: "Last name is required" }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-lg font-semibold">Last Name</FormLabel>
-                        <FormControl>
-                          <Input className="text-xl p-3 font-medium" placeholder="Last Name" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Username */}
-                <FormField
-                  control={form.control}
-                  name="username"
-                  rules={{ required: "Username is required" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold">Username</FormLabel>
-                      <FormControl>
-                        <Input className="text-xl p-3 font-medium" placeholder="Username" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Email */}
-                <FormField
-                  control={form.control}
-                  name="email"
-                  rules={{
-                    required: "Email is required",
-                    pattern: { value: /^\S+@\S+$/i, message: "Invalid email" },
-                  }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold">Email</FormLabel>
-                      <FormControl>
-                        <Input className="text-xl p-3 font-medium" placeholder="Email" type="email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid gap-8 md:grid-cols-2">
-                  {/* Phone */}
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    rules={{
-                      pattern: { value: /^[0-9]*$/, message: "Phone must be numeric" },
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-lg font-semibold">Phone (optional)</FormLabel>
-                        <FormControl>
-                          <Input className="text-xl p-3 font-medium" type="tel" placeholder="Phone" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Birth Date */}
-                  <FormField
-                    control={form.control}
-                    name="birthDate"
-                    rules={{
-                      required: "Birth date is required",
-                      validate: (value) =>
-                        !value ? "Birth date is required" : new Date(value) > new Date() ? "Birth date cannot be in the future" : true,
-                    }}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-lg font-semibold">Birth Date</FormLabel>
-                        <FormControl>
-                          <Input className="text-xl p-3 font-medium" type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Gender */}
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  rules={{ required: "Gender is required" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-lg font-semibold">Gender</FormLabel>
-                      <FormControl>
-                        <div className="flex gap-6 text-lg flex-wrap">
-                          {["male", "female", "other"].map((value) => (
-                            <label key={value} className="inline-flex items-center space-x-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                value={value}
-                                checked={field.value === value}
-                                onChange={() => field.onChange(value)}
-                                className="form-radio w-6 h-6"
+                            {imageSrc ? (
+                              <Image
+                                src={imageSrc}
+                                alt="Avatar"
+                                fill
+                                className="rounded-full object-cover"
+                                style={{ objectPosition: "center center" }}
                               />
-                              <span className="capitalize">{value}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+                            ) : (
+                              <FiUser size={100} className="text-gray-400" />
+                            )}
+                          </div>
+                        </FormControl>
 
-            <div className="flex justify-center mt-10">
-              <Button type="submit" className="text-lg px-10 py-4">
-                Update Account
-              </Button>
-            </div>
-          </form>
+                        <Button
+                          type="button"
+                          className="bg-black text-white rounded px-4 py-2 mt-5 w-full max-w-[300px]"
+                          onClick={() =>
+                            document
+                              .querySelector<HTMLInputElement>(
+                                'input[type="file"]'
+                              )
+                              ?.click()
+                          }
+                        >
+                          Upload Image
+                        </Button>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* -------- RIGHT SIDE FORM -------- */}
+                <div className="flex-grow space-y-8 w-full">
+                  {/* First/Last */}
+                  <div className="grid gap-8 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg font-semibold">
+                            First Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value ?? ""}
+                              className="text-xl p-3 font-medium"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg font-semibold">
+                            Last Name
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={field.value ?? ""}
+                              className="text-xl p-3 font-medium"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* username */}
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg font-semibold">
+                          Username
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value ?? ""}
+                            className="text-xl p-3 font-medium"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* email */}
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg font-semibold">
+                          Email
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="email"
+                            {...field}
+                            value={field.value ?? ""}
+                            className="text-xl p-3 font-medium"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* phone + birth date */}
+                  <div className="grid gap-8 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg font-semibold">
+                            Phone
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              value={
+                                field.value ? formatThaiPhone(field.value) : ""
+                              }
+                              className="text-xl p-3 font-medium"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="birthDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-lg font-semibold">
+                            Birth Date
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="date"
+                              {...field}
+                              value={field.value ?? ""}
+                              className="text-xl p-3 font-medium"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* gender */}
+                  <FormField
+                    control={form.control}
+                    name="gender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-lg font-semibold">
+                          Gender
+                        </FormLabel>
+                        <FormControl>
+                          <div className="flex gap-6 text-lg flex-wrap">
+                            {["male", "female", "other"].map((value) => (
+                              <label
+                                key={value}
+                                className="inline-flex items-center space-x-3 cursor-pointer"
+                              >
+                                <input
+                                  type="radio"
+                                  value={value}
+                                  checked={field.value === value}
+                                  onChange={() => field.onChange(value)}
+                                  className="form-radio w-6 h-6"
+                                />
+                                <span className="capitalize">{value}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
+              {/* submit */}
+              <div className="flex justify-center mt-10">
+                <Button
+                  type="submit"
+                  className="text-lg px-10 py-4 flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting && (
+                    <LoaderIcon className="w-5 h-5 animate-spin" />
+                  )}
+                  Update Account
+                </Button>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
 
-      {/* Modal Crop */}
+      {/* Crop Modal */}
       {isCropModalOpen && imageSrc && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 max-w-md w-full">
@@ -338,7 +548,9 @@ export default function AccountForm() {
               />
             </div>
             <div className="mt-4 flex justify-end gap-4">
-              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setIsCropModalOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleCropConfirm}>Confirm Crop</Button>
             </div>
           </div>
