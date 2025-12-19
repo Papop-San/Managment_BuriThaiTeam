@@ -1,17 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BannerSwitch } from "@/components/ui/switch";
 import CreatePaymentForm from "./components/CreatePaymentForm";
-import { ArrowUpDown } from "lucide-react";
-
-
+import { LoaderIcon } from "lucide-react";
 import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   useReactTable,
@@ -38,315 +35,338 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { SidebarComponent } from "@/app/components/Sidebar";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  PaymentResponse,
+  PaymentItem,
+  PaymentsData,
+  CreatePaymentPayload,
+} from "@/types/payment";
+import UpdatePaymentForm from "./components/upadatePaymentForm";
+import DeleteButton from "@/components/deleteButton";
 
-export type PaymentInterface = {
-  bannerId: number;
-  name: string;
-  data: string;
-  account_type: string;
-  is_active: boolean;
-};
-
-export const PaymentMock: PaymentInterface[] = [
-  {
-    bannerId: 1,
-    name: "John Doe",
-    data: "0123456789",
-    account_type: "Promptpay",
-    is_active: false,
-  },
-  {
-    bannerId: 2,
-    name: "Jane Smith",
-    data: "0987654321",
-    account_type: "Promptpay",
-    is_active: true,
-  },
-];
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Payment() {
-  const [data, setData] = useState<PaymentInterface[]>(PaymentMock);
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [openCreate, setOpenCreate] = useState(false);
 
-  const columns: ColumnDef<PaymentInterface>[] = [
-    // ✅ Checkbox select
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [paymentData, setPaymentsData] = useState<PaymentsData | null>(null);
+
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const [openUpdate, setOpenUpdate] = useState(false);
+  const [selectedPayment, setSelectedPayment] =
+    useState<PaymentItem | null>(null);
+
+  /* ---------------- fetch data (server-side) ---------------- */
+  const fetchData = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `${API_URL}/promtpay?page=${page}&limit=${limit}&search=${search}`,
+        { credentials: "include" }
+      );
+      const json: PaymentResponse = await res.json();
+      setPaymentsData(json.data);
+    } catch (err) {
+      console.error(err);
+      setError("Load data failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  /* ---------------- columns ---------------- */
+  const columns: ColumnDef<PaymentItem>[] = [
     {
       id: "select",
+      size: 50,
       header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value: boolean) =>
-            table.toggleAllPageRowsSelected(value)
-          }
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-        />
-      ),
-    },
-
-    // Banner ID
-    {
-      accessorKey: "bannerId",
-      header: ({ column }) => (
-        <div
-          className="flex justify-center items-center space-x-2 cursor-pointer select-none text-base font-normal"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          <span>User ID</span>
-          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-        </div>
-      ),
-      sortingFn: "alphanumeric",
-      enableSorting: true,
-    },
-
-    // Name
-    {
-      accessorKey: "name",
-      header: "Name",
-      cell: ({ row }) => <span>{row.original.name}</span>,
-    },
-
-    // Data
-    {
-      accessorKey: "data",
-      header: "Data",
-      cell: ({ row }) => <span>{row.original.data}</span>,
-    },
-
-    // Account Type
-    {
-      accessorKey: "account_type",
-      header: "Account Type",
-      cell: ({ row }) => <span>{row.original.account_type}</span>,
-    },
-
-    // Active
-    {
-      accessorKey: "is_active",
-      header: ({ column }) => (
-        <div className="flex justify-start items-center space-x-2 select-none text-base font-normal">
-          <span>Active</span>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-left">
-          <BannerSwitch
-            checked={row.original.is_active}
-            onCheckedChange={(checked: boolean) =>
-              setData((prev) =>
-                prev.map((item) =>
-                  item.bannerId === row.original.bannerId
-                    ? { ...item, is_active: checked }
-                    : item
-                )
-              )
+        <div className="flex justify-center">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value: boolean) =>
+              table.toggleAllPageRowsSelected(value)
             }
           />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+          />
+        </div>
+      ),
+    },
+    {
+      accessorKey: "id",
+      header: "User ID",
+      cell: ({ row }) => (
+        <span
+          className="block text-center cursor-pointer text-blue-600 hover:underline"
+          onClick={() => {
+            setSelectedPayment(row.original);
+            setOpenUpdate(true);
+          }}
+        >
+          {row.original.id}
+        </span>
+      ),
+    },
+    {
+      id: "name",
+      header: "Name",
+      accessorFn: (row) =>
+        `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim(),
+      cell: ({ getValue }) => (
+        <span className="block truncate text-center">
+          {String(getValue() || "-")}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "payKey",
+      header: "Data",
+      cell: ({ row }) => (
+        <span className="block truncate text-center">
+          {row.original.payKey}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "payment_method",
+      header: "Account Type",
+      cell: ({ row }) => (
+        <span className="block text-center">
+          {row.original.payment_method}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "is_active",
+      header: "Active",
+      cell: ({ row }) => (
+        <div className="flex justify-center">
+          <BannerSwitch checked={row.original.is_active} />
         </div>
       ),
     },
   ];
 
+  /* ---------------- table (NO pagination here) ---------------- */
   const table = useReactTable({
-    data,
+    data: paymentData?.data ?? [],
     columns,
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    initialState: { pagination: { pageSize: 20 } },
   });
 
-  const pageCount = table.getPageCount();
-  const pageIndex = table.getState().pagination.pageIndex;
+  const selectedIds = table
+    .getSelectedRowModel()
+    .rows.map((row) => row.original.id);
+
+  /* ---------------- pagination (from backend) ---------------- */
+  const totalPages = paymentData
+    ? Math.ceil(paymentData.total / paymentData.limit)
+    : 0;
 
   const paginationRange = React.useMemo(() => {
-    const totalPages = pageCount;
-    const currentPage = pageIndex + 1;
-    const delta = 2;
     const range: (number | "...")[] = [];
+    const delta = 2;
     let l: number | undefined;
+
     for (let i = 1; i <= totalPages; i++) {
       if (
         i === 1 ||
         i === totalPages ||
-        (i >= currentPage - delta && i <= currentPage + delta)
+        (i >= page - delta && i <= page + delta)
       ) {
-        if (l !== undefined && i - l > 1) range.push("...");
+        if (l && i - l > 1) range.push("...");
         range.push(i);
         l = i;
       }
     }
     return range;
-  }, [pageCount, pageIndex]);
+  }, [page, totalPages]);
 
+  /* ---------------- create ---------------- */
+  const handleCreatePayment = async (payload: CreatePaymentPayload) => {
+    try {
+      const res = await fetch(`${API_URL}/promtpay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Create failed");
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /* ====================== UI ====================== */
   return (
     <SidebarComponent>
       <div className="px-5">
         <Card>
           <div className="text-center mt-5">
-            <p className="text-4xl font-semibold">Payment Account</p>
+            <p className="text-4xl font-semibold">Payment</p>
           </div>
-          <CardHeader className="flex justify-between">
-            <div className="">
-              <Input
-                placeholder="Search account..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-100"
+
+          <CardHeader className="flex justify-between gap-4 md:flex-row">
+            <Input
+              placeholder="Search Data..."
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+              className="w-80"
+            />
+            <div className="flex gap-5">
+              <Button onClick={() => setOpenCreate(true)}>Create</Button>
+              <DeleteButton
+                endpoint="promtpay"
+                ids={selectedIds}
+                confirmMessage="ต้องการลบรายชื่อนี้ไหม?"
+                disabled={selectedIds.length === 0}
+                onSuccess={async () => {
+                  table.resetRowSelection();
+                  await fetchData();
+                }}
               />
             </div>
-            <div className="flex flex-wrap items-center gap-5 md:flex-row">
-              <Button
-                className="cursor-pointer hover:text-black hover:bg-white border border-black"
-                onClick={() => setOpenCreate(true)}
-              >
-                Create
-              </Button>
-
-              <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-                Delete
-              </Button>
-            </div>
           </CardHeader>
+
           <CardContent>
-            <div className="overflow-hidden rounded-md border w-full">
-              <Table className="w-full">
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id} className="text-center">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
+            {loading ? (
+              <div className="flex flex-col items-center py-10">
+                <LoaderIcon className="h-10 w-10 animate-spin" />
+                <p>Loading data...</p>
+              </div>
+            ) :error? (
+              <div className="text-center py-10 text-red-500 text-lg">
+              {error}
+            </div>
+            ): (
+              <>
+                <div className="overflow-x-auto rounded-md border">
+                  <Table className="table-fixed w-full">
+                    <TableHeader>
+                      {table.getHeaderGroups().map((hg) => (
+                        <TableRow key={hg.id}>
+                          {hg.headers.map((header) => (
+                            <TableHead key={header.id} className="text-center">
+                              {flexRender(
                                 header.column.columnDef.header,
                                 header.getContext()
                               )}
-                        </TableHead>
+                            </TableHead>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="text-center">
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    </TableHeader>
 
-            {/* Pagination */}
-            <div className="flex items-center space-x-2 py-4 justify-center">
-              <Pagination className="flex justify-end">
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (!table.getCanPreviousPage()) return;
-                        table.previousPage();
-                      }}
-                      className={
-                        table.getCanPreviousPage()
-                          ? ""
-                          : "pointer-events-none opacity-50 cursor-not-allowed"
-                      }
-                    />
-                  </PaginationItem>
+                    <TableBody>
+                      {table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id}>
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
 
-                  {paginationRange.map((page, idx) =>
-                    page === "..." ? (
-                      <PaginationItem key={`ellipsis-${idx}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    ) : (
-                      <PaginationItem key={page}>
-                        <PaginationLink
-                          href="#"
-                          isActive={
-                            page === table.getState().pagination.pageIndex + 1
-                          }
-                          onClick={(e) => {
-                            e.preventDefault();
-                            table.setPageIndex(page - 1);
-                          }}
-                        >
-                          {page}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
+                <Pagination className="justify-end py-4">
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page > 1) setPage(page - 1);
+                        }}
+                      />
+                    </PaginationItem>
 
-                  <PaginationItem>
-                    <PaginationNext
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (!table.getCanNextPage()) return;
-                        table.nextPage();
-                      }}
-                      className={
-                        table.getCanNextPage()
-                          ? ""
-                          : "pointer-events-none opacity-50 cursor-not-allowed"
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
+                    {paginationRange.map((p, i) =>
+                      p === "..." ? (
+                        <PaginationItem key={i}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={p}>
+                          <PaginationLink
+                            href="#"
+                            isActive={p === page}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              setPage(p);
+                            }}
+                          >
+                            {p}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
+
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (page < totalPages) setPage(page + 1);
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
+
       <CreatePaymentForm
         open={openCreate}
         onClose={() => setOpenCreate(false)}
-        onCreate={(newItem) => {
-          setData((prev) => [
-            ...prev,
-            {
-              bannerId: prev.length + 1,
-              ...newItem,
-            },
-          ]);
-        }}
+        onCreate={handleCreatePayment}
+      />
+
+      <UpdatePaymentForm
+        open={openUpdate}
+        onClose={() => setOpenUpdate(false)}
+        paymentItem={selectedPayment}
       />
     </SidebarComponent>
   );

@@ -46,7 +46,9 @@ export type AccountFormValues = {
   lastName: string;
   email: string;
   phone?: string;
+  password?: string;
   gender: GenderType | "";
   birthDate?: string;
   avatar?: File | null;
 };
+

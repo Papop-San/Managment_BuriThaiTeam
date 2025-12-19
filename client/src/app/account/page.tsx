@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { LoaderIcon } from "lucide-react";
-
 import {
   ColumnDef,
   flexRender,
@@ -16,7 +15,6 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,7 +26,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
 import {
   Pagination,
   PaginationContent,
@@ -290,9 +287,6 @@ export default function Account() {
               <Link href="/account/create">
                 <Button className="cursor-pointer">Create</Button>
               </Link>
-              {/* <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-                Delete
-              </Button> */}
               <DeleteButton
                 endpoint="users"
                 ids={selectedIds}

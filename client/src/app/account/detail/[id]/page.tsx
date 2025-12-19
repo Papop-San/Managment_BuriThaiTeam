@@ -91,6 +91,7 @@ export default function AccountDetailForm() {
       firstName: "",
       lastName: "",
       email: "",
+      password: "",
       phone: "",
       gender: "",
       birthDate: "",
@@ -108,8 +109,8 @@ export default function AccountDetailForm() {
   // ---------- LOAD USER DATA ----------
   useEffect(() => {
     async function fetchUser() {
-      setLoading(true); // เริ่ม loading
-      setError(""); // เคลียร์ error เก่า
+      setLoading(true); 
+      setError(""); 
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`,
@@ -148,7 +149,7 @@ export default function AccountDetailForm() {
         console.error("LOAD USER ERROR:", err);
         setError("Network error: Unable to fetch user data");
       } finally {
-        setLoading(false); // จบ loading ไม่ว่า success หรือ fail
+        setLoading(false); 
       }
     }
 

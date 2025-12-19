@@ -19,45 +19,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CreatePaymentPayload, PaymentMethod } from "@/types/payment";
 
-interface Props {
+interface CreatePaymentFormProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: {
-    name: string;
-    data: string;
-    account_type: string;
-    is_active: boolean;
-  }) => void;
+  onCreate: (data: CreatePaymentPayload) => void;
 }
 
-export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
-  const [name, setName] = useState("");
-  const [paymentData, setPaymentData] = useState("");
-  const [accountType, setAccountType] = useState("Promptpay");
+export default function CreatePaymentForm({
+  open,
+  onClose,
+  onCreate,
+}: CreatePaymentFormProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [payKey, setPayKey] = useState("");
+  const [accountType, setAccountType] =
+    useState<PaymentMethod>("PROMPTPAY");
   const [active, setActive] = useState(false);
 
-  // ❗ State สำหรับ Error message
-  const [errors, setErrors] = useState({
-    name: "",
-    data: "",
-  });
-
   const handleSubmit = () => {
-    const newErrors = {
-      name: name.trim() === "" ? "กรุณากรอกชื่อบัญชี" : "",
-      data: paymentData.trim() === "" ? "กรุณากรอกเบอร์ / เลขบัญชี" : "",
-    };
-
-    setErrors(newErrors);
-
-    // ถ้ามี error กลับเลย ไม่ให้ส่ง form
-    if (newErrors.name || newErrors.data) return;
+    if (!firstName || !lastName || !payKey) return;
 
     onCreate({
-      name,
-      data: paymentData,
-      account_type: accountType,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      payKey: payKey.trim(),
+      payment_method: accountType,
       is_active: active,
     });
 
@@ -68,67 +57,46 @@ export default function CreatePaymentForm({ open, onClose, onCreate }: Props) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Create Payment Account</DialogTitle>
+          <DialogTitle className="text-center">Create Payment Account</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Name */}
           <div>
-            <Label className="py-2">Name</Label>
-            <Input
-              value={name}
-              onChange={(e) => {
-                setName(e.target.value);
-                if (errors.name) setErrors({ ...errors, name: "" });
-              }}
-              placeholder="ชื่อบัญชี"
-            />
-            {errors.name && (
-              <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-            )}
+            <Label className="py-2">First Name</Label>
+            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
           </div>
 
-          {/* Data */}
           <div>
-            <Label className="py-2">Data</Label>
-            <Input
-              value={paymentData}
-              onChange={(e) => {
-                setPaymentData(e.target.value);
-                if (errors.data) setErrors({ ...errors, data: "" });
-              }}
-              placeholder="เบอร์ / เลขบัญชี"
-            />
-            {errors.data && (
-              <p className="text-red-500 text-sm mt-1">{errors.data}</p>
-            )}
+            <Label  className="py-2" >Last Name</Label>
+            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
 
-          {/* Account Type */}
           <div>
-            <Label className="py-2">Account Type</Label>
-            <Select value={accountType} onValueChange={setAccountType}>
+            <Label  className="py-2" >Data</Label>
+            <Input value={payKey} onChange={(e) => setPayKey(e.target.value)} />
+          </div>
+
+          <div>
+            <Label  className="py-2">Account Type</Label>
+            <Select value={accountType} onValueChange={(v) => setAccountType(v as PaymentMethod)}>
               <SelectTrigger>
-                <SelectValue placeholder="เลือกประเภทบัญชี" />
+                <SelectValue placeholder="SELECT ACCOUNT TYPE" />
               </SelectTrigger>
               <SelectContent side="bottom" align="start">
-                <SelectItem value="Promptpay">Promptpay</SelectItem>
-                <SelectItem value="Bank">Bank</SelectItem>
+                <SelectItem value="PROMPTPAY">PROMPTPAY</SelectItem>
+                <SelectItem value="BANK">BANK</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Active Switch */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 py-2" >
             <Label>Active</Label>
             <BannerSwitch checked={active} onCheckedChange={setActive} />
           </div>
         </div>
 
         <DialogFooter>
-
-        <Button onClick={handleSubmit}>Create</Button>
-
+          <Button onClick={handleSubmit}>Create</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

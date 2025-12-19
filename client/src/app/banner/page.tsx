@@ -9,7 +9,7 @@ import { BannerSwitch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { OrderSelectCell } from "./components/OrderSelectCell";
 import CreateBannerTab from "./components/CreateBannerTab";
-
+import Image from "next/image";
 import {
   Table,
   TableBody,
@@ -33,35 +33,62 @@ import {
   SortingState,
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
 } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
+import { BannerPagination, BannerItem, BannerResponse } from "@/types/banner";
+import DeleteButton from "@/components/deleteButton";
 
-export type BannerInterface = {
-  bannerId: number;
-  url: string;
-  is_active: boolean;
-  order_banner: number;
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Banner() {
-  const [data, setData] = useState<BannerInterface[]>([]);
+  const [bannerData, setBannerData] = useState<BannerPagination | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [openCreate, setOpenCreate] = useState(false);
+  const [search, setSearch] = useState("");
 
-  // สร้าง mock data ใน client เท่านั้น
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  // Fetch banner data
+  const fetchData = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `${API_URL}/banners/all?page=${page}&limit=${limit}&search=${search}`,
+        { method: "GET", credentials: "include" }
+      );
+      const data: BannerResponse = await res.json();
+      if (!res.ok) throw new Error(data.status || "Fetch error");
+      setBannerData(data.data);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, search]);
+
   useEffect(() => {
-    const mock: BannerInterface[] = Array.from({ length: 4 }, (_, i) => ({
-      bannerId: i + 1,
-      url: `https://picsum.photos/1200/400?random=${i + 1}`,
-      is_active: Math.random() < 0.8,
-      order_banner: i + 1,
-    }));
-    setData(mock);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  const columns: ColumnDef<BannerInterface>[] = [
+  // Update banner active status
+  const updateBannerStatus = async (bannerId: number, isActive: boolean) => {
+    const res = await fetch(`${API_URL}/banners/${bannerId}`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: isActive }),
+    });
+    if (!res.ok) throw new Error("Update banner status failed");
+  };
+
+  const columns: ColumnDef<BannerItem>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -83,7 +110,7 @@ export default function Banner() {
       ),
     },
     {
-      accessorKey: "bannerId",
+      accessorKey: "banner_id",
       header: ({ column }) => (
         <div
           className="flex justify-start items-center space-x-2 cursor-pointer select-none text-base font-normal"
@@ -93,112 +120,115 @@ export default function Banner() {
           <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
         </div>
       ),
-      cell: ({ row }) => <div className="text-left">{row.original.bannerId}</div>,
+      cell: ({ row }) => <div className="text-left">{row.original.banner_id}</div>,
       sortingFn: "alphanumeric",
     },
     {
-      accessorKey: "url",
-      header: ({ column }) => (
-        <div className="flex justify-start items-center space-x-2 select-none text-base font-normal">
-          <span>Banner</span>
-        </div>
-      ),
+      accessorKey: "url_banner",
+      header: () => <span>Banner</span>,
       cell: ({ row }) => (
-        <div className="flex justify-start">
-          <img
-            src={row.original.url}
-            alt={`Banner ${row.original.bannerId}`}
-            className="h-16 w-auto object-cover"
-          />
-        </div>
+        <Image
+          src={row.original.url_banner}
+          alt={`Banner ${row.original.banner_id}`}
+          width={120}
+          height={64}
+          className="h-16 w-auto object-cover rounded"
+        />
       ),
     },
     {
       accessorKey: "order_banner",
-      header: ({ column }) => (
-        <div
-          className="flex justify-start items-center space-x-2 cursor-pointer select-none text-base font-normal"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          <span>ลำดับ Banner</span>
-          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
-        </div>
-      ),
+      header: () => <span>ลำดับ Banner</span>,
       cell: ({ row }) => (
         <OrderSelectCell
           value={row.original.order_banner}
-          maxOrder={data.length}
+          maxOrder={bannerData?.data.length ?? 0}
           onSubmit={(newValue) =>
-            setData((prev) =>
-              prev.map((item) =>
-                item.bannerId === row.original.bannerId
-                  ? { ...item, order_banner: newValue }
-                  : item
-              )
-            )
+            setBannerData((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                data: prev.data.map((item) =>
+                  item.banner_id === row.original.banner_id
+                    ? { ...item, order_banner: newValue }
+                    : item
+                ),
+              };
+            })
           }
         />
       ),
     },
     {
       accessorKey: "is_active",
-      header: ({ column }) => (
-        <div className="flex justify-start items-center space-x-2 select-none text-base font-normal">
-          <span>Active</span>
-        </div>
-      ),
+      header: () => <span>Active</span>,
       cell: ({ row }) => (
-        <div className="text-left">
-          <BannerSwitch
-            checked={row.original.is_active}
-            onCheckedChange={(checked: boolean) =>
-              setData((prev) =>
-                prev.map((item) =>
-                  item.bannerId === row.original.bannerId
+        <BannerSwitch
+          checked={row.original.is_active}
+          onCheckedChange={async (checked: boolean) => {
+            setBannerData((prev) => {
+              if (!prev) return prev;
+              return {
+                ...prev,
+                data: prev.data.map((item) =>
+                  item.banner_id === row.original.banner_id
                     ? { ...item, is_active: checked }
                     : item
-                )
-              )
+                ),
+              };
+            });
+
+            try {
+              await updateBannerStatus(row.original.banner_id, checked);
+            } catch {
+              setBannerData((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  data: prev.data.map((item) =>
+                    item.banner_id === row.original.banner_id
+                      ? { ...item, is_active: !checked }
+                      : item
+                  ),
+                };
+              });
             }
-          />
-        </div>
+          }}
+        />
       ),
     },
   ];
 
+  // Table
   const table = useReactTable({
-    data,
+    data: bannerData?.data ?? [],
     columns,
     state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    initialState: { pagination: { pageSize: 10 } },
   });
 
-  const pageCount = table.getPageCount();
-  const pageIndex = table.getState().pagination.pageIndex;
+  const selectedIds = table.getSelectedRowModel().rows.map(
+    (row) => row.original.banner_id
+  );
+
+  // Server-side pagination
+  const totalPages = bannerData ? Math.ceil(bannerData.total / bannerData.limit) : 0;
 
   const paginationRange = React.useMemo(() => {
-    const totalPages = pageCount;
-    const currentPage = pageIndex + 1;
     const delta = 2;
-    const range: (number | "...")[] = [];
-    let l: number | undefined;
+    const pages: (number | "...")[] = [];
+    let last: number | undefined;
     for (let i = 1; i <= totalPages; i++) {
-      if (
-        i === 1 ||
-        i === totalPages ||
-        (i >= currentPage - delta && i <= currentPage + delta)
-      ) {
-        if (l !== undefined && i - l > 1) range.push("...");
-        range.push(i);
-        l = i;
+      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
+        if (last && i - last > 1) pages.push("...");
+        pages.push(i);
+        last = i;
       }
     }
-    return range;
-  }, [pageCount, pageIndex]);
+    return pages;
+  }, [page, totalPages]);
 
   return (
     <SidebarComponent>
@@ -217,9 +247,15 @@ export default function Banner() {
                 Create
               </Button>
 
-              <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-                Delete
-              </Button>
+              <DeleteButton
+                endpoint="banners"
+                ids={selectedIds}
+                confirmMessage="ต้องการลบรายชื่อนี้ไหม?"
+                disabled={selectedIds.length === 0}
+                onSuccess={async () => {
+                  await fetchData();
+                }}
+              />
             </div>
           </div>
 
@@ -229,48 +265,33 @@ export default function Banner() {
                 <TableHeader>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        let className = "px-2 py-2";
-                        if (header.id === "select") className += " pl-20";
-                        return (
-                          <TableHead key={header.id} className={className}>
-                            {header.isPlaceholder
-                              ? null
-                              : flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                          </TableHead>
-                        );
-                      })}
+                      {headerGroup.headers.map((header) => (
+                        <TableHead key={header.id} className="px-2 py-2">
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      ))}
                     </TableRow>
                   ))}
                 </TableHeader>
-
                 <TableBody>
                   {table.getRowModel().rows.length ? (
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => {
-                          let className = "px-2 py-2";
-                          if (cell.column.id === "select") className += " pl-20";
-                          return (
-                            <TableCell key={cell.id} className={className}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </TableCell>
-                          );
-                        })}
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id} className="px-2 py-2">
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
+                      <TableCell colSpan={columns.length} className="h-24 text-center">
                         No results.
                       </TableCell>
                     </TableRow>
@@ -289,33 +310,28 @@ export default function Banner() {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (!table.getCanPreviousPage()) return;
-                      table.previousPage();
+                      if (page > 1) setPage(page - 1);
                     }}
-                    className={
-                      table.getCanPreviousPage()
-                        ? ""
-                        : "pointer-events-none opacity-50 cursor-not-allowed"
-                    }
+                    className={page > 1 ? "" : "pointer-events-none opacity-50 cursor-not-allowed"}
                   />
                 </PaginationItem>
 
-                {paginationRange.map((page, idx) =>
-                  page === "..." ? (
+                {paginationRange.map((p, idx) =>
+                  p === "..." ? (
                     <PaginationItem key={`ellipsis-${idx}`}>
                       <PaginationEllipsis />
                     </PaginationItem>
                   ) : (
-                    <PaginationItem key={page}>
+                    <PaginationItem key={p}>
                       <PaginationLink
                         href="#"
-                        isActive={page === table.getState().pagination.pageIndex + 1}
+                        isActive={p === page}
                         onClick={(e) => {
                           e.preventDefault();
-                          table.setPageIndex(page - 1);
+                          setPage(p as number);
                         }}
                       >
-                        {page}
+                        {p}
                       </PaginationLink>
                     </PaginationItem>
                   )
@@ -326,14 +342,9 @@ export default function Banner() {
                     href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (!table.getCanNextPage()) return;
-                      table.nextPage();
+                      if (page < totalPages) setPage(page + 1);
                     }}
-                    className={
-                      table.getCanNextPage()
-                        ? ""
-                        : "pointer-events-none opacity-50 cursor-not-allowed"
-                    }
+                    className={page < totalPages ? "" : "pointer-events-none opacity-50 cursor-not-allowed"}
                   />
                 </PaginationItem>
               </PaginationContent>
@@ -342,23 +353,10 @@ export default function Banner() {
         </Card>
       </div>
 
-      {/* Create Banner Modal */}
       <CreateBannerTab
         open={openCreate}
         onClose={() => setOpenCreate(false)}
-        onSubmit={(data) => {
-          if (data.file) {
-            setData((prev) => [
-              ...prev,
-              {
-                bannerId: prev.length + 1,
-                url: URL.createObjectURL(data.file),
-                is_active: data.is_active,
-                order_banner: prev.length + 1,
-              },
-            ]);
-          }
-        }}
+        onSuccess={() => fetchData()}
       />
     </SidebarComponent>
   );

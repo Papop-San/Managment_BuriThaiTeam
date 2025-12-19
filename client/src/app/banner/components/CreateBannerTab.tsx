@@ -1,102 +1,125 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BannerSwitch } from "@/components/ui/switch";
 import { X } from "lucide-react";
 
-interface CreateBannerPayload {
-  file?: File;          // ⭐ เปลี่ยนจาก File | null → optional File
-  is_active: boolean;
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateBannerPayload) => void; // ⭐ ใช้ payload type ใหม่
+  onSuccess: () => void;
 }
 
-export default function CreateBannerTab({ open, onClose, onSubmit }: Props) {
+export default function CreateBannerTab({ open, onClose, onSuccess }: Props) {
+  const [file, setFile] = useState<File | undefined>();
   const [preview, setPreview] = useState<string | null>(null);
-  const [file, setFile] = useState<File | undefined>(undefined); 
-  const [active, setActive] = useState<boolean>(false);
 
-  // เมื่อเลือกไฟล์ → generate preview
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // เลือกรูป → preview
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
-    if (selected) {
-      setFile(selected);
-      setPreview(URL.createObjectURL(selected));
-    }
+    if (!selected) return;
+
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
   };
 
   // ลบรูป
   const removeImage = () => {
-    setFile(undefined); // ⭐ reset undefined
+    setFile(undefined);
     setPreview(null);
   };
 
-  const handleSubmit = () => {
-    onSubmit({
-      file,        // ⭐ TS ไม่ error แล้ว
-      is_active: active,
-    });
-    onClose();
+  // upload + create banner
+  const handleSubmit = async () => {
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const formData = new FormData();
+      formData.append("images", file);
+
+      const res = await fetch(`${API_URL}/banners`, {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        throw new Error("Create banner failed");
+      }
+
+      // success
+      onSuccess();
+      onClose();
+
+      // reset state
+      setFile(undefined);
+      setPreview(null);
+    } catch (err) {
+      console.error(err);
+      setError("Upload banner failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Upload Banner</DialogTitle>
-        </DialogHeader>
-
         <div className="space-y-4">
-          {/* Upload Input */}
+          {/* Upload input */}
+          <DialogHeader>
+            <DialogTitle></DialogTitle>
+          </DialogHeader>
+
           <div>
             <Label className="mb-2 block">Banner Image</Label>
-            <Input 
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-            />
+            <Input type="file" accept="image/*" onChange={handleFileChange} />
           </div>
 
-          {/* Preview พร้อมปุ่มลบ */}
+          {/* Preview */}
           {preview && (
             <div className="relative w-full">
-              <img 
-                src={preview} 
+              <img
+                src={preview}
+                alt="Banner preview"
                 className="w-full rounded-lg border object-cover"
               />
-
-              {/* ปุ่ม X ลบรูป */}
               <button
                 onClick={removeImage}
-                className="absolute top-2 right-2 bg-black/50 rounded-full p-1"
+                className="absolute top-2 right-2 bg-black/60 rounded-full p-1"
               >
                 <X className="text-white w-5 h-5" />
               </button>
             </div>
           )}
 
-          {/* Active Switch */}
-          <div className="flex items-center space-x-3">
-            <Label>Active</Label>
-            <BannerSwitch checked={active} onCheckedChange={setActive} />
-          </div>
+          {/* Error */}
+          {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
 
-        {/* Footer */}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
+          <Button onClick={handleSubmit} disabled={!file || loading}>
+            {loading ? "Uploading..." : "Upload"}
           </Button>
-          <Button onClick={handleSubmit} disabled={!file}>
-            Upload
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Close
           </Button>
         </DialogFooter>
       </DialogContent>
