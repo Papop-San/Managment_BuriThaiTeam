@@ -7,7 +7,6 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFilteredRowModel,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -42,40 +41,51 @@ import {
 } from "@/types/order";
 import { EditableStatusCellWrapper } from "./components/EditableStatusCellWrapper";
 import { EditableTrackingWrapper } from "./components/EditTrackingCellWrapper";
-
+import { SlipCell } from "./components/slipCell";
+ 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function OrderManagement() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState("");
   const [tableOrders, setTableOrders] = useState<OrderInterface[]>([]);
   const [orderData, setOrderData] = useState<OrdersData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchData = async () => {
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 20;
+
+  const fetchData = React.useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const res = await fetch(`${API_URL}/order-management`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-      });
+      const res = await fetch(
+        `${API_URL}/order-management/all?page=${page}&limit=${limit}&search=${search}`,
+        {
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
       const data: OrderResponse = await res.json();
-      const flatOrders: OrderInterface[] = data.data.orders.map(
+
+      const flatOrders: OrderInterface[] = data.data.data.orders.map(
         (order: OrderDetails) => ({
           sku: `ORD-${order.id_order}`,
           customerName: `${order.user.first_name} ${order.user.last_name}`,
           orderDate: order.created_at,
           quantity: order.order_items_count,
           totalAmount: order.dynamic_total_price,
-          paymentStatus: order.status as OrderInterface["paymentStatus"],
+          paymentStatus: order.status,
           tracking_number: order.tracking_number ?? "-",
+
+          slipImage: order.payment?.slip_img ?? null,
         })
       );
-      setOrderData(data.data);
+
+      setOrderData(data.data.data);
       setTableOrders(flatOrders);
     } catch (err) {
       console.error(err);
@@ -83,72 +93,58 @@ export default function OrderManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
-  // Table columns
   const columns: ColumnDef<OrderInterface>[] = [
     {
       id: "select",
-      size: 50,
       header: ({ table }) => (
-        <div className="flex justify-center items-center">
-          <Checkbox
-            checked={
-              table.getIsAllPageRowsSelected() ||
-              (table.getIsSomePageRowsSelected() && "indeterminate")
-            }
-            onCheckedChange={(value: boolean) =>
-              table.toggleAllPageRowsSelected(value)
-            }
-          />
-        </div>
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value: boolean) =>
+            table.toggleAllPageRowsSelected(value)
+          }
+        />
       ),
       cell: ({ row }) => (
-        <div className="flex justify-center items-center">
-          <Checkbox
-            checked={row.getIsSelected()}
-            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-          />
-        </div>
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+        />
       ),
       enableSorting: false,
-      enableHiding: false,
     },
     {
       accessorKey: "sku",
-      size: 120,
       header: ({ column }) => (
         <div
-          className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+          className="flex justify-center cursor-pointer"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          <span>SKU / รหัสสินค้า</span>
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          SKU <ArrowUpDown className="ml-1 h-4 w-4" />
         </div>
       ),
-      cell: ({ row }) => <div>{row.getValue("sku")}</div>,
     },
     {
       accessorKey: "customerName",
-      size: 200,
       header: ({ column }) => (
         <div
-          className="flex items-center justify-center space-x-1 cursor-pointer select-none"
+          className="flex justify-center cursor-pointer"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          <span>ชื่อลูกค้า</span>
-          <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          ลูกค้า <ArrowUpDown className="ml-1 h-4 w-4" />
         </div>
       ),
-      cell: ({ row }) => <div>{row.getValue("customerName")}</div>,
     },
     {
       accessorKey: "orderDate",
-      size: 140,
       header: "Order Date",
       cell: ({ row }) => (
         <ClientOnlyDate date={new Date(row.getValue("orderDate"))} />
@@ -156,20 +152,15 @@ export default function OrderManagement() {
     },
     {
       accessorKey: "quantity",
-      size: 100,
-      header: "จำนวนสินค้า",
-      cell: ({ row }) => <div>{row.getValue("quantity")}</div>,
+      header: "จำนวน",
     },
     {
       accessorKey: "totalAmount",
-      size: 100,
       header: "ยอดรวม",
-      cell: ({ row }) => <div>{row.getValue("totalAmount")}</div>,
     },
     {
       accessorKey: "paymentStatus",
-      header: "สถานะการชำระเงิน",
-      size: 120,
+      header: "สถานะ",
       cell: ({ row }) => (
         <EditableStatusCellWrapper
           row={row}
@@ -186,8 +177,15 @@ export default function OrderManagement() {
       ),
     },
     {
+      id: "paymentSlip",
+      header: "สลิป",
+      cell: ({ row }) => (
+        <SlipCell slipImage={row.original.slipImage} />
+      ),
+    },
+    {
       accessorKey: "tracking_number",
-      header: "รหัสการจัดส่ง",
+      header: "Tracking",
       cell: ({ row }) => (
         <EditableTrackingWrapper
           row={row}
@@ -208,18 +206,17 @@ export default function OrderManagement() {
   const table = useReactTable({
     data: tableOrders,
     columns,
-    state: { sorting, globalFilter },
+    state: { sorting }, // 🔧 FIX: ไม่มี globalFilter
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     initialState: { pagination: { pageSize: 20 } },
   });
 
   const pageCount = table.getPageCount();
   const pageIndex = table.getState().pagination.pageIndex;
+
   const paginationRange = React.useMemo(() => {
     const totalPages = pageCount;
     const currentPage = pageIndex + 1;
@@ -240,40 +237,19 @@ export default function OrderManagement() {
     return range;
   }, [pageCount, pageIndex]);
 
-  // Dashboard cards
+  // Dashboard cards (เหมือนเดิม)
   const orderCards = orderData
     ? [
-        {
-          title: "คำสั่งซื้อทั้งหมด",
-          value: orderData.totalOrders ?? 0,
-          icon: "📦",
-        },
-        {
-          title: "รอดำเนินการ",
-          value: orderData.pendingOrdersCount ?? 0,
-          icon: "⏳",
-        },
-        {
-          title: "กำลังจัดส่ง",
-          value: orderData.DeliveryCount ?? 0,
-          icon: "🚚",
-        },
-        {
-          title: "สำเร็จแล้ว",
-          value: orderData.CompleateCount ?? 0,
-          icon: "✅",
-        },
+        { title: "คำสั่งซื้อทั้งหมด", value: orderData.totalOrders, icon: "📦" },
+        { title: "รอดำเนินการ", value: orderData.pendingOrdersCount, icon: "⏳" },
+        { title: "กำลังจัดส่ง", value: orderData.deliveryCount, icon: "🚚" },
+        { title: "สำเร็จแล้ว", value: orderData.completeCount, icon: "✅" },
       ]
-    : [
-        { title: "คำสั่งซื้อทั้งหมด", value: "-", icon: "📦" },
-        { title: "รอดำเนินการ", value: "-", icon: "⏳" },
-        { title: "กำลังจัดส่ง", value: "-", icon: "🚚" },
-        { title: "สำเร็จแล้ว", value: "-", icon: "✅" },
-      ];
+    : [];
 
   return (
     <SidebarComponent>
-      <div className="px-5">
+           <div className="px-5">
         <Card>
           <div className="text-center">
             <p className="text-4xl font-semibold">Order Management</p>
@@ -301,10 +277,13 @@ export default function OrderManagement() {
           <CardContent>
             <div className="flex items-center justify-between mb-6">
               <Input
-                placeholder="Search Customer..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="w-100"
+                placeholder="Search account..."
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+                className="w-80"
               />
             </div>
 
@@ -369,64 +348,55 @@ export default function OrderManagement() {
             {/* Pagination */}
             {!loading && !error && tableOrders.length > 0 && (
               <div className="flex items-center space-x-2 py-4 justify-center">
-                <Pagination className="flex justify-end">
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!table.getCanPreviousPage()) return;
-                          table.previousPage();
-                        }}
-                        className={
-                          !table.getCanPreviousPage()
-                            ? "pointer-events-none opacity-50 cursor-not-allowed"
-                            : ""
-                        }
-                      />
-                    </PaginationItem>
+                  <Pagination className="flex justify-end">
+                    <PaginationContent className="w-full justify-end">
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (!table.getCanPreviousPage()) return;
+                            table.previousPage();
+                          }}
+                        />
+                      </PaginationItem>
 
-                    {paginationRange.map((page, idx) =>
-                      page === "..." ? (
-                        <PaginationItem key={`ellipsis-${idx}`}>
-                          <PaginationEllipsis />
-                        </PaginationItem>
-                      ) : (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            isActive={
-                              page === table.getState().pagination.pageIndex + 1
-                            }
-                            onClick={(e) => {
-                              e.preventDefault();
-                              table.setPageIndex(page - 1);
-                            }}
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      )
-                    )}
+                      {paginationRange.map((page, idx) =>
+                        page === "..." ? (
+                          <PaginationItem key={`ellipsis-${idx}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href="#"
+                              isActive={
+                                page ===
+                                table.getState().pagination.pageIndex + 1
+                              }
+                              onClick={(e) => {
+                                e.preventDefault();
+                                table.setPageIndex(page - 1);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        )
+                      )}
 
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (!table.getCanNextPage()) return;
-                          table.nextPage();
-                        }}
-                        className={
-                          !table.getCanNextPage()
-                            ? "pointer-events-none opacity-50 cursor-not-allowed"
-                            : ""
-                        }
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (!table.getCanNextPage()) return;
+                            table.nextPage();
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
               </div>
             )}
           </CardContent>

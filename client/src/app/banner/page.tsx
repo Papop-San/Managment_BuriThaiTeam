@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { OrderSelectCell } from "./components/OrderSelectCell";
 import CreateBannerTab from "./components/CreateBannerTab";
 import Image from "next/image";
+import { LoaderIcon } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -24,7 +25,6 @@ import {
   PaginationItem,
   PaginationNext,
   PaginationPrevious,
-  PaginationEllipsis,
   PaginationLink,
 } from "@/components/ui/pagination";
 import {
@@ -45,21 +45,17 @@ export default function Banner() {
   const [bannerData, setBannerData] = useState<BannerPagination | null>(null);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [openCreate, setOpenCreate] = useState(false);
-  const [search, setSearch] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  // Fetch banner data
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const res = await fetch(
-        `${API_URL}/banners/all?page=${page}&limit=${limit}&search=${search}`,
+        `${API_URL}/banners/all?page=${page}&limit=${limit}`,
         { method: "GET", credentials: "include" }
       );
       const data: BannerResponse = await res.json();
@@ -71,13 +67,12 @@ export default function Banner() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  // Update banner active status
   const updateBannerStatus = async (bannerId: number, isActive: boolean) => {
     const res = await fetch(`${API_URL}/banners/${bannerId}`, {
       method: "PUT",
@@ -91,22 +86,29 @@ export default function Banner() {
   const columns: ColumnDef<BannerItem>[] = [
     {
       id: "select",
+      size: 56,
       header: ({ table }) => (
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value: boolean) =>
-            table.toggleAllPageRowsSelected(value)
-          }
-        />
+        // ✅ FIX: center + spacing
+        <div className="flex justify-center pl-2">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value: boolean) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+          />
+        </div>
       ),
       cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-        />
+        // ✅ FIX: center + spacing
+        <div className="flex justify-center pl-2">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+          />
+        </div>
       ),
     },
     {
@@ -120,7 +122,9 @@ export default function Banner() {
           <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
         </div>
       ),
-      cell: ({ row }) => <div className="text-left">{row.original.banner_id}</div>,
+      cell: ({ row }) => (
+        <div className="text-left">{row.original.banner_id}</div>
+      ),
       sortingFn: "alphanumeric",
     },
     {
@@ -199,7 +203,6 @@ export default function Banner() {
     },
   ];
 
-  // Table
   const table = useReactTable({
     data: bannerData?.data ?? [],
     columns,
@@ -207,28 +210,16 @@ export default function Banner() {
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    enableRowSelection: true,
   });
 
-  const selectedIds = table.getSelectedRowModel().rows.map(
-    (row) => row.original.banner_id
-  );
+  const selectedIds = table
+    .getSelectedRowModel()
+    .rows.map((row) => row.original.banner_id);
 
-  // Server-side pagination
-  const totalPages = bannerData ? Math.ceil(bannerData.total / bannerData.limit) : 0;
-
-  const paginationRange = React.useMemo(() => {
-    const delta = 2;
-    const pages: (number | "...")[] = [];
-    let last: number | undefined;
-    for (let i = 1; i <= totalPages; i++) {
-      if (i === 1 || i === totalPages || (i >= page - delta && i <= page + delta)) {
-        if (last && i - last > 1) pages.push("...");
-        pages.push(i);
-        last = i;
-      }
-    }
-    return pages;
-  }, [page, totalPages]);
+  const totalPages = bannerData
+    ? Math.ceil(bannerData.total / bannerData.limit)
+    : 0;
 
   return (
     <SidebarComponent>
@@ -260,48 +251,81 @@ export default function Banner() {
           </div>
 
           <CardContent>
-            <div className="overflow-hidden rounded-md border w-full">
-              <Table className="w-full">
-                <TableHeader>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <TableHead key={header.id} className="px-2 py-2">
-                          {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                              )}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableHeader>
-                <TableBody>
-                  {table.getRowModel().rows.length ? (
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id} className="px-2 py-2">
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
+            {loading ? (
+              <>
+                <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                  <LoaderIcon className="h-10 w-10 animate-spin text-gray-500" />
+                  <p className="text-gray-500 text-lg">Loading data...</p>
+                </div>
+              </>
+            ) : error ? (
+              <div className="text-center py-10 text-red-500 text-lg">
+                {error}
+              </div>
+            ) : (
+              <div className="overflow-hidden rounded-md border w-full">
+                <Table className="w-full">
+                  <TableHeader>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <TableRow key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <TableHead
+                            key={header.id}
+                            className={`px-2 py-2 ${
+                              header.column.id === "select" ? "pl-4" : ""
+                            }`}
+                            style={{
+                              width: header.column.getSize(),
+                            }}
+                          >
+                            {header.isPlaceholder
+                              ? null
+                              : flexRender(
+                                  header.column.columnDef.header,
+                                  header.getContext()
+                                )}
+                          </TableHead>
                         ))}
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={columns.length} className="h-24 text-center">
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                    ))}
+                  </TableHeader>
+
+                  <TableBody>
+                    {table.getRowModel().rows.length ? (
+                      table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell
+                              key={cell.id}
+                              className={`px-2 py-2 ${
+                                cell.column.id === "select" ? "pl-4" : ""
+                              }`}
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={columns.length}
+                          className="h-24 text-center"
+                        >
+                          No results.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
 
-          {/* Pagination */}
+          {/* Pagination (ไม่แก้) */}
           <div className="py-4">
             <Pagination className="flex justify-end w-full">
               <PaginationContent className="flex space-x-2 pr-4">
@@ -312,30 +336,28 @@ export default function Banner() {
                       e.preventDefault();
                       if (page > 1) setPage(page - 1);
                     }}
-                    className={page > 1 ? "" : "pointer-events-none opacity-50 cursor-not-allowed"}
+                    className={
+                      page > 1
+                        ? ""
+                        : "pointer-events-none opacity-50 cursor-not-allowed"
+                    }
                   />
                 </PaginationItem>
 
-                {paginationRange.map((p, idx) =>
-                  p === "..." ? (
-                    <PaginationItem key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={p}>
-                      <PaginationLink
-                        href="#"
-                        isActive={p === page}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setPage(p as number);
-                        }}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === i + 1}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setPage(i + 1);
+                      }}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
 
                 <PaginationItem>
                   <PaginationNext
@@ -344,7 +366,11 @@ export default function Banner() {
                       e.preventDefault();
                       if (page < totalPages) setPage(page + 1);
                     }}
-                    className={page < totalPages ? "" : "pointer-events-none opacity-50 cursor-not-allowed"}
+                    className={
+                      page < totalPages
+                        ? ""
+                        : "pointer-events-none opacity-50 cursor-not-allowed"
+                    }
                   />
                 </PaginationItem>
               </PaginationContent>

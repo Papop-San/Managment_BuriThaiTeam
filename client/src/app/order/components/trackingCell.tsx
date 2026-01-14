@@ -19,7 +19,7 @@ export function EditTrackingCell({ value, onSave, disabled }: EditTrackingCellPr
   }, [value]);
 
   const handleSave = async () => {
-    if (tempValue === value) return; // ไม่ต้อง save ถ้าไม่เปลี่ยน
+    if (tempValue === value) return; 
     if (!onSave) return;
 
     setLoading(true);
