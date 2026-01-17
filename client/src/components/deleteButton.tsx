@@ -74,11 +74,11 @@ export default function DeleteButton({
           <DialogDescription>{confirmMessage}</DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2">
+        <Button onClick={handleDelete} disabled={loading}>
+            {loading ? <LoaderIcon className="w-4 h-4 animate-spin" /> : "Delete"}
+          </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
-          </Button>
-          <Button onClick={handleDelete} disabled={loading}>
-            {loading ? <LoaderIcon className="w-4 h-4 animate-spin" /> : "Delete"}
           </Button>
         </DialogFooter>
       </DialogContent>

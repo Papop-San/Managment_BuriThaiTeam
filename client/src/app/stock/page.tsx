@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -32,382 +32,227 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { SidebarComponent } from "../components/Sidebar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
+import { LoaderIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
-// Interface Type
-export type StockInterface = {
-  ProductId: number;
-  ProductName: string;
-  category: string;
-  totalQuantity: number;
-  remainingQuantity: number;
-  sales: number;
-  status: "InStock" | "LowStock" | "OutOfStock";
-};
-// Mockup date
-export const stockItemsMockup: StockInterface[] = [
-  {
-    ProductId: 1,
-    ProductName: "iPhone 15 Pro",
-    category: "Smartphone",
-    totalQuantity: 150,
-    remainingQuantity: 75,
-    sales: 75,
-    status: "LowStock",
-  },
-  {
-    ProductId: 2,
-    ProductName: "MacBook Air M2",
-    category: "Laptop",
-    totalQuantity: 50,
-    remainingQuantity: 50,
-    sales: 0,
-    status: "InStock",
-  },
-  {
-    ProductId: 3,
-    ProductName: "Samsung Galaxy S24",
-    category: "Smartphone",
-    totalQuantity: 100,
-    remainingQuantity: 0,
-    sales: 100,
-    status: "OutOfStock",
-  },
-  {
-    ProductId: 4,
-    ProductName: "Sony WH-1000XM5",
-    category: "Headphones",
-    totalQuantity: 80,
-    remainingQuantity: 20,
-    sales: 60,
-    status: "LowStock",
-  },
-  {
-    ProductId: 5,
-    ProductName: "iPad Pro 12.9",
-    category: "Tablet",
-    totalQuantity: 70,
-    remainingQuantity: 35,
-    sales: 35,
-    status: "LowStock",
-  },
-  {
-    ProductId: 6,
-    ProductName: "Dell XPS 13",
-    category: "Laptop",
-    totalQuantity: 60,
-    remainingQuantity: 60,
-    sales: 0,
-    status: "InStock",
-  },
-  {
-    ProductId: 7,
-    ProductName: "Google Pixel 8",
-    category: "Smartphone",
-    totalQuantity: 90,
-    remainingQuantity: 10,
-    sales: 80,
-    status: "LowStock",
-  },
-  {
-    ProductId: 8,
-    ProductName: "Bose QuietComfort 45",
-    category: "Headphones",
-    totalQuantity: 50,
-    remainingQuantity: 0,
-    sales: 50,
-    status: "OutOfStock",
-  },
-  {
-    ProductId: 9,
-    ProductName: "Apple Watch Series 9",
-    category: "Wearable",
-    totalQuantity: 120,
-    remainingQuantity: 80,
-    sales: 40,
-    status: "InStock",
-  },
-  {
-    ProductId: 10,
-    ProductName: "Samsung Galaxy Tab S9",
-    category: "Tablet",
-    totalQuantity: 40,
-    remainingQuantity: 20,
-    sales: 20,
-    status: "LowStock",
-  },
-  {
-    ProductId: 11,
-    ProductName: "Lenovo ThinkPad X1",
-    category: "Laptop",
-    totalQuantity: 55,
-    remainingQuantity: 55,
-    sales: 0,
-    status: "InStock",
-  },
-  {
-    ProductId: 12,
-    ProductName: "Sony Xperia 1 V",
-    category: "Smartphone",
-    totalQuantity: 75,
-    remainingQuantity: 0,
-    sales: 75,
-    status: "OutOfStock",
-  },
-  {
-    ProductId: 13,
-    ProductName: "JBL Flip 6",
-    category: "Headphones",
-    totalQuantity: 90,
-    remainingQuantity: 45,
-    sales: 45,
-    status: "LowStock",
-  },
-  {
-    ProductId: 14,
-    ProductName: "iMac 24",
-    category: "Desktop",
-    totalQuantity: 30,
-    remainingQuantity: 30,
-    sales: 0,
-    status: "InStock",
-  },
-  {
-    ProductId: 15,
-    ProductName: "Amazon Kindle Paperwhite",
-    category: "E-Reader",
-    totalQuantity: 100,
-    remainingQuantity: 50,
-    sales: 50,
-    status: "LowStock",
-  },
-  {
-    ProductId: 16,
-    ProductName: "Microsoft Surface Pro 9",
-    category: "Tablet",
-    totalQuantity: 60,
-    remainingQuantity: 0,
-    sales: 60,
-    status: "OutOfStock",
-  },
-  {
-    ProductId: 17,
-    ProductName: "HP Spectre x360",
-    category: "Laptop",
-    totalQuantity: 45,
-    remainingQuantity: 45,
-    sales: 0,
-    status: "InStock",
-  },
-  {
-    ProductId: 18,
-    ProductName: "Samsung Galaxy Buds 3",
-    category: "Headphones",
-    totalQuantity: 70,
-    remainingQuantity: 25,
-    sales: 45,
-    status: "LowStock",
-  },
-  {
-    ProductId: 19,
-    ProductName: "Oppo Find X6 Pro",
-    category: "Smartphone",
-    totalQuantity: 85,
-    remainingQuantity: 0,
-    sales: 85,
-    status: "OutOfStock",
-  },
-  {
-    ProductId: 20,
-    ProductName: "Asus ROG Zephyrus",
-    category: "Laptop",
-    totalQuantity: 40,
-    remainingQuantity: 40,
-    sales: 0,
-    status: "InStock",
-  },
-];
-
-// Table Management
-export const columns: ColumnDef<StockInterface>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex justify-center items-center">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value: boolean) =>
-            table.toggleAllPageRowsSelected(value)
-          }
-          aria-label="Select all"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex justify-center items-center">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-    size: 50,
-  },
-  {
-    accessorKey: "ProductId",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>ID</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => {
-      const id = row.getValue("ProductId") as number;
-      return (
-        <div className="text-center">
-          <Link
-            href={`stock/detail/${id}`}
-            className="text-blue-600 hover:underline"
-          >
-            {id.toString()}
-          </Link>
-        </div>
-      );
-    },
-  },
-
-  {
-    accessorKey: "ProductName",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Product</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">{row.getValue("ProductName")}</div>
-    ),
-  },
-  {
-    accessorKey: "category",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Category</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">{row.getValue("category")}</div>
-    ),
-  },
-  {
-    accessorKey: "totalQuantity",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Total Qty</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">{row.getValue("totalQuantity")}</div>
-    ),
-  },
-  {
-    accessorKey: "remainingQuantity",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Remain Qty</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">{row.getValue("remainingQuantity")}</div>
-    ),
-  },
-  {
-    accessorKey: "sales",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Sales</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="text-center">{row.getValue("sales")}</div>
-    ),
-  },
-  {
-    accessorKey: "status",
-    header: ({ column }) => (
-      <div
-        className="flex justify-center items-center space-x-2 cursor-pointer select-none"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        <span>Status</span>
-        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-      </div>
-    ),
-    cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      const colorMap: Record<string, string> = {
-        LowStock: "bg-yellow-500 text-white",
-        InStock: "bg-green-700 text-white",
-        OutOfStock: "bg-red-700 text-white",
-      };
-
-      return (
-        <div className="flex justify-center">
-          <span
-            className={`inline-block px-3 py-1 rounded-full text-xs font-medium capitalize ${
-              colorMap[status] ?? "bg-gray-100 text-gray-800"
-            }`}
-          >
-            {status.replace(/([A-Z])/g, " $1").trim()}
-          </span>
-        </div>
-      );
-    },
-  },
-];
+import {
+  InventoryItems,
+  StockPagination,
+  StockResponse,
+  StockRow,
+} from "@/types/stock";
+import Image from "next/image";
+import DeleteButton from "@/components/deleteButton";
 
 export default function StockPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [stockPagination, setStockPagination] =
+    useState<StockPagination | null>(null);
+
+  const [stockRows, setStockRows] = useState<StockRow[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const fetchData = React.useCallback(async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/stocks?page=${page}&limit=${limit}&search=${search}`,
+        { method: "GET", credentials: "include" }
+      );
+
+      const result: StockResponse = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.status || "Fetch error");
+      }
+
+      const flatRows: StockRow[] = result.data.data.flatMap((product) =>
+        product.variants.flatMap((variant) =>
+          variant.inventories.map((inv: InventoryItems) => ({
+            product_id: product.id_products,
+            product_name: product.name,
+            image_url: product.images?.[0]?.url,
+            category_name: product.category.name,
+
+            variant_id: variant.variant_id,
+            variant_name: variant.variant_name,
+
+            inventory_id: inv.inventory_id,
+            inventory_name: inv.inventory_name,
+            price: inv.price,
+            stock: inv.stock,
+          }))
+        )
+      );
+      setStockPagination(result.data);
+      setStockRows(flatRows);
+    } catch (err) {
+      console.error(err);
+      setError("Loading failed");
+    } finally {
+      setLoading(false);
+    }
+  }, [page, limit, search]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const columns: ColumnDef<StockRow>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <div className="flex justify-center items-center">
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value: boolean) =>
+              table.toggleAllPageRowsSelected(value)
+            }
+            aria-label="Select all"
+          />
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="flex justify-center items-center">
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value: boolean) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 20,
+    },
+    // ✅ product_id
+    {
+      accessorKey: "inventory_id",
+      header: "ID",
+      cell: ({ row }) => {
+        const inventoryId = row.original.inventory_id;
+        const productId = row.original.product_id;
+
+        return (
+          <div className="text-center">
+            <Link
+              href={`/stock/detail/${productId}`}
+              className="text-blue-600 hover:underline"
+            >
+              {inventoryId}
+            </Link>
+          </div>
+        );
+      },
+    },
+    // ✅ product_name
+    {
+      accessorKey: "product_name",
+      header: "Product",
+      cell: ({ row }) => {
+        const name = row.getValue<string>("product_name");
+        const imageUrl = row.original.image_url;
+
+        return (
+          <div className="flex items-center gap-3">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={name}
+                width={100}
+                height={60}
+                className="rounded-md object-cover border"
+              />
+            ) : (
+              <div className="h-10 w-10 rounded-md bg-gray-200 flex items-center justify-center text-xs text-gray-500">
+                N/A
+              </div>
+            )}
+
+            <span className="text-sm font-medium">{name}</span>
+          </div>
+        );
+      },
+    },
+
+    // ✅ variant_name
+    {
+      accessorKey: "variant_name",
+      header: "Variant",
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("variant_name")}</div>
+      ),
+    },
+
+    // ✅ inventory_name
+    {
+      accessorKey: "inventory_name",
+      header: "Inventory",
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("inventory_name")}</div>
+      ),
+    },
+
+    // ✅ stock (แทน totalQuantity)
+    {
+      accessorKey: "stock",
+      header: "Stock",
+      cell: ({ row }) => (
+        <div className="text-center">{row.getValue("stock")}</div>
+      ),
+    },
+
+    // ✅ status (คำนวณจาก stock)
+    {
+      id: "status",
+      header: "Status",
+      accessorFn: (row) => {
+        if (row.stock === 0) return "OutOfStock";
+        if (row.stock < 20) return "LowStock";
+        return "InStock";
+      },
+      cell: ({ getValue }) => {
+        const status = getValue<string>();
+        const colorMap: Record<string, string> = {
+          LowStock: "bg-yellow-500 text-white",
+          InStock: "bg-green-700 text-white",
+          OutOfStock: "bg-red-700 text-white",
+        };
+
+        return (
+          <div className="flex justify-center">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium ${colorMap[status]}`}
+            >
+              {status.replace(/([A-Z])/g, " $1").trim()}
+            </span>
+          </div>
+        );
+      },
+    },
+  ];
 
   const table = useReactTable({
-    data: stockItemsMockup,
+    data: stockRows,
     columns,
-    state: { sorting, globalFilter },
+    state: {
+      sorting,
+    },
     onSortingChange: setSorting,
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+
     initialState: {
       pagination: {
         pageSize: 20,
@@ -444,6 +289,11 @@ export default function StockPage() {
     return range;
   }, [pageCount, pageIndex]);
 
+
+  const selectedIds = table
+  .getSelectedRowModel()
+  .rows.map((row) => row.original.inventory_id)
+
   return (
     <SidebarComponent>
       <div className="px-5">
@@ -457,8 +307,11 @@ export default function StockPage() {
               <div>
                 <Input
                   placeholder="Search product..."
-                  value={globalFilter ?? ""}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  value={search}
+                  onChange={(e) => {
+                    setPage(1);
+                    setSearch(e.target.value);
+                  }}
                   className="w-100"
                 />
               </div>
@@ -468,9 +321,16 @@ export default function StockPage() {
                     Create
                   </Button>
                 </Link>
-                <Button className="bg-white text-black border border-black cursor-pointer hover:text-white">
-                  Delete
-                </Button>
+                <DeleteButton
+                  endpoint="products/inventories"
+                  ids={selectedIds}
+                  confirmMessage = "ต้องการลบรายการระดับ Inventory ไหม?"
+                  disabled={selectedIds.length === 0}
+                  onSuccess={async () => {
+                    table.resetRowSelection(); 
+                    await fetchData();         
+                  }}
+                />
               </div>
             </div>
             <div className="overflow-hidden rounded-md border w-full">
@@ -496,7 +356,7 @@ export default function StockPage() {
                   ))}
                 </TableHeader>
                 <TableBody>
-                  {table.getRowModel().rows.length ? (
+                  {table.getRowModel().rows.length > 0 &&
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
@@ -512,81 +372,82 @@ export default function StockPage() {
                           </TableCell>
                         ))}
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={columns.length}
-                        className="h-24 text-center"
-                      >
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
+                    ))}
                 </TableBody>
               </Table>
             </div>
           </CardContent>
-          <div className="flex items-center space-x-2 py-4">
-            <Pagination className="justify-end">
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (!table.getCanPreviousPage()) return;
-                      table.previousPage();
-                    }}
-                    className={
-                      table.getCanPreviousPage()
-                        ? ""
-                        : "pointer-events-none opacity-50 cursor-not-allowed"
-                    }
-                  />
-                </PaginationItem>
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-10 space-y-3">
+              <LoaderIcon className="h-10 w-10 animate-spin text-gray-500" />
+              <p className="text-gray-500 text-lg">Loading data...</p>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10 text-red-500 text-lg">
+              {error}
+            </div>
+          ) : (
+            <div className="flex items-center space-x-2 py-4">
+              <Pagination className="justify-end">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!table.getCanPreviousPage()) return;
+                        table.previousPage();
+                      }}
+                      className={
+                        table.getCanPreviousPage()
+                          ? ""
+                          : "pointer-events-none opacity-50 cursor-not-allowed"
+                      }
+                    />
+                  </PaginationItem>
 
-                {paginationRange.map((page, idx) =>
-                  page === "..." ? (
-                    <PaginationItem key={`ellipsis-${idx}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        href="#"
-                        isActive={
-                          page === table.getState().pagination.pageIndex + 1
-                        }
-                        onClick={(e) => {
-                          e.preventDefault();
-                          table.setPageIndex(page - 1);
-                        }}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                )}
+                  {paginationRange.map((page, idx) =>
+                    page === "..." ? (
+                      <PaginationItem key={`ellipsis-${idx}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={
+                            page === table.getState().pagination.pageIndex + 1
+                          }
+                          onClick={(e) => {
+                            e.preventDefault();
+                            table.setPageIndex(page - 1);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  )}
 
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (!table.getCanNextPage()) return;
-                      table.nextPage();
-                    }}
-                    className={
-                      table.getCanNextPage()
-                        ? ""
-                        : "pointer-events-none opacity-50 cursor-not-allowed"
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </div>
+                  <PaginationItem>
+                    <PaginationNext
+                      href="#"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (!table.getCanNextPage()) return;
+                        table.nextPage();
+                      }}
+                      className={
+                        table.getCanNextPage()
+                          ? ""
+                          : "pointer-events-none opacity-50 cursor-not-allowed"
+                      }
+                    />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          )}
         </Card>
       </div>
     </SidebarComponent>

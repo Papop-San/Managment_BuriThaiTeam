@@ -1,41 +1,38 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FiArrowLeft, FiPlus, FiMinus, FiTrash2 } from "react-icons/fi";
+import Image from "next/image";
+
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
+
 import * as SwitchPrimitive from "@radix-ui/react-switch";
 
+/* ===================== TYPES ===================== */
+
 type UploadedFile = {
-  file: File;
-  preview: string; // <- เก็บ object URL
-  type: "video" | "slide" | "cover";
-  isCoverSwitch: boolean;
+  file: File | null;
+  preview: string;
+  type: "cover" | "slide" | "video";
+  is_cover: boolean;
 };
 
 type Inventory = {
   inventory_name: string;
-  price: string;
-  quantity: number;
+  price: number; // ✅ FIX
+  stock: number;
 };
 
 type ProductVariant = {
@@ -44,88 +41,75 @@ type ProductVariant = {
 };
 
 type ProductFormValues = {
-  productName: string;
-  category: string;
-  status: string;
+  name: string; // ✅ FIX
+  brand: string;
+  short_description: string;
+  description: string;
+  id_category: string;
   variants: ProductVariant[];
-  imagesWithMeta?: UploadedFile[];
 };
 
-// Nested Component สำหรับ Variant + Inventory
-type VariantItemProps = {
-  vIndex: number;
-  control: any;
-  register: any;
-  removeVariant: (index: number) => void;
-};
+/* ===================== VARIANT ITEM ===================== */
 
-const VariantItem: React.FC<VariantItemProps> = ({
-  vIndex,
-  control,
-  register,
-  removeVariant,
-}) => {
-  const {
-    fields: inventoryFields,
-    append: appendInventory,
-    remove: removeInventory,
-  } = useFieldArray({
+const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
+  const { fields, append, remove } = useFieldArray({
     control,
     name: `variants.${vIndex}.inventories`,
   });
 
   return (
     <div className="border p-4 rounded-md space-y-4">
-      {/* Variant */}
-      <div className="flex items-center gap-2">
-        <FormField
-          control={control}
-          name={`variants.${vIndex}.variant_name`}
-          rules={{ required: "กรุณากรอกชื่อรุ่นสินค้า" }}
-          render={({ field }) => (
-            <FormItem className="flex-1">
-              <FormLabel>รุ่นสินค้า</FormLabel>
-              <FormControl>
-                <Input {...field} placeholder="กรอกรุ่นสินค้า" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button
-          type="button"
-          variant="destructive"
-          onClick={() => removeVariant(vIndex)}
-        >
-          <FiMinus />
-        </Button>
-      </div>
+      <FormField
+        control={control}
+        name={`variants.${vIndex}.variant_name`}
+        render={({ field }) => (
+          <FormItem>
+            <div className="flex justify-between items-center">
+              <FormLabel>Variant</FormLabel>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={() => removeVariant(vIndex)}
+              >
+                <FiMinus />
+              </Button>
+            </div>
+            <FormControl>
+              <Input {...field} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
 
-      {/* Inventories */}
-      {inventoryFields.map((inv, iIndex) => (
-        <div
-          key={inv.id}
-          className="flex items-center gap-2 border p-2 rounded-md"
-        >
+      {fields.map((inv, iIndex) => (
+        <div key={inv.id} className="flex gap-2">
           <Input
             {...register(
               `variants.${vIndex}.inventories.${iIndex}.inventory_name`
             )}
-            placeholder="ชื่อคลัง"
-          />
-          <Input
-            {...register(`variants.${vIndex}.inventories.${iIndex}.price`)}
-            placeholder="ราคา"
+            placeholder="Inventory"
           />
           <Input
             type="number"
-            {...register(`variants.${vIndex}.inventories.${iIndex}.quantity`)}
-            placeholder="จำนวน"
+            {...register(
+              `variants.${vIndex}.inventories.${iIndex}.price`,
+              { valueAsNumber: true } // ✅ FIX
+            )}
+            placeholder="Price"
+          />
+          <Input
+            type="number"
+            {...register(`variants.${vIndex}.inventories.${iIndex}.stock`, {
+              valueAsNumber: true,
+            })}
+            placeholder="Stock"
           />
           <Button
             type="button"
             variant="destructive"
-            onClick={() => removeInventory(iIndex)}
+            size="sm"
+            onClick={() => remove(iIndex)}
           >
             <FiMinus />
           </Button>
@@ -135,337 +119,316 @@ const VariantItem: React.FC<VariantItemProps> = ({
       <Button
         type="button"
         variant="outline"
-        onClick={() =>
-          appendInventory({ inventory_name: "", price: "", quantity: 0 })
-        }
+        size="sm"
+        onClick={() => append({ inventory_name: "", price: 0, stock: 0 })}
       >
-        <FiPlus /> เพิ่ม Inventory
+        <FiPlus /> Add Inventory
       </Button>
     </div>
   );
 };
 
-export default function UpdateProduct() {
+/* ===================== MAIN ===================== */
+
+export default function CreateProduct() {
+  const router = useRouter();
+  const [images, setImages] = useState<UploadedFile[]>([]);
+
   const form = useForm<ProductFormValues>({
     defaultValues: {
-      productName: "เสื้อยืดลายแมว",
-      category: "clothing",
-      status: "in_stock",
-      variants: [
-        {
-          variant_name: "สีขาว - S",
-          inventories: [
-            { inventory_name: "คลัง A", price: "399", quantity: 10 },
-            { inventory_name: "คลัง B", price: "399", quantity: 5 },
-          ],
-        },
-        {
-          variant_name: "สีดำ - M",
-          inventories: [
-            { inventory_name: "คลัง A", price: "399", quantity: 8 },
-          ],
-        },
-      ],
-      imagesWithMeta: [],
+      name: "",
+      brand: "",
+      short_description: "",
+      description: "",
+      id_category: "",
+      variants: [],
     },
   });
 
-  const router = useRouter();
+  const { control } = form;
 
-  const {
-    fields: variantFields,
-    append: appendVariant,
-    remove: removeVariant,
-  } = useFieldArray({
-    control: form.control,
+  const { fields, append, remove } = useFieldArray({
+    control,
     name: "variants",
   });
 
-  const onSubmit: SubmitHandler<ProductFormValues> = (data) => {
-    console.log("Updated Product:", data);
-    alert("บันทึกข้อมูลสินค้าสำเร็จ");
+  /* ===================== IMAGE UPLOAD ===================== */
+
+  const handleUploadImages = (files: FileList | null) => {
+    if (!files) return;
+
+    const newImages: UploadedFile[] = Array.from(files).map((file) => {
+      const isVideo = file.type.startsWith("video/");
+
+      return {
+        file,
+        preview: URL.createObjectURL(file),
+        type: isVideo ? "video" : "slide",
+        is_cover: false,
+      };
+    });
+
+    setImages((prev) => {
+      const hasCover = prev.some((img) => img.is_cover);
+
+      return [
+        ...prev,
+        ...newImages.map((img, i) => {
+          if (img.type === "video") return img;
+
+          const isCover = !hasCover && i === 0;
+          return {
+            ...img,
+            is_cover: isCover,
+            type: isCover ? "cover" : "slide",
+          };
+        }),
+      ];
+    });
   };
 
-  const files: UploadedFile[] = form.watch("imagesWithMeta") || [];
+  /* ===================== SUBMIT ===================== */
 
-  // Cleanup object URLs ตอน unmount
-  useEffect(() => {
-    return () => {
-      files.forEach((f) => URL.revokeObjectURL(f.preview));
-    };
-  }, [files]);
+  const onSubmit: SubmitHandler<ProductFormValues> = async (data) => {
+    const formData = new FormData();
 
-  const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const newFiles: UploadedFile[] = Array.from(e.target.files).map((file) => ({
-      file,
-      preview: URL.createObjectURL(file), // สร้าง URL ครั้งเดียว
-      type: "slide",
-      isCoverSwitch: false,
-    }));
-    form.setValue("imagesWithMeta", [...files, ...newFiles]);
-  };
+    formData.append("name", data.name);
+    formData.append("brand", data.brand);
+    formData.append("short_description", data.short_description);
+    formData.append("description", data.description);
+    formData.append("id_category", data.id_category);
+    formData.append("variants", JSON.stringify(data.variants));
 
-  const handleSwitchChange = (index: number, value: boolean) => {
-    form.setValue(
-      "imagesWithMeta",
-      files.map((f, i) => {
-        if (i === index)
-          return { ...f, isCoverSwitch: value, type: value ? "cover" : f.type };
-        if (value) return { ...f, isCoverSwitch: false }; // lock cover แค่ตัวเดียว
-        return f;
-      })
+    images.forEach((img) => {
+      if (img.file) {
+        formData.append("images", img.file);
+      }
+    });
+
+    formData.append(
+      "imagesMeta",
+      JSON.stringify(
+        images.map((img) => ({
+          is_cover: img.is_cover,
+          type: img.type,
+        }))
+      )
     );
+
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, {
+      method: "POST",
+      credentials: "include",
+      body: formData,
+    });
+
+    router.back();
   };
 
-  const handleTypeChange = (
-    index: number,
-    value: "video" | "slide" | "cover"
-  ) => {
-    form.setValue(
-      "imagesWithMeta",
-      files.map((f, i) => (i === index ? { ...f, type: value } : f))
-    );
-  };
-
-  const handleRemoveFile = (index: number) => {
-    URL.revokeObjectURL(files[index].preview); // ล้าง object URL
-    form.setValue(
-      "imagesWithMeta",
-      files.filter((_, i) => i !== index)
-    );
-  };
+  /* ===================== UI ===================== */
 
   return (
     <Form {...form}>
-      <div className="m-2">
-        <Button
-          type="button"
-          variant="outline"
-          className="flex items-center gap-2"
-          onClick={() => router.back()}
-        >
-          <FiArrowLeft /> Back
-        </Button>
-      </div>
+      <Button variant="outline" onClick={() => router.back()}>
+        <FiArrowLeft /> Back
+      </Button>
 
-      <div className="flex flex-col lg:flex-row justify-center ">
-        {/* Detail Product */}
-        <div className="flex justify-center relative w-full lg:w-2/3">
-          <Card className="w-full">
-            <CardHeader>
-              <CardTitle className="text-3xl font-bold text-center">
-                Create Product
-              </CardTitle>
-            </CardHeader>
+      <Card className="mt-5 mx-10">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">Create Product</CardTitle>
+        </CardHeader>
 
-            <CardContent>
-              <FormItem>
-                <FormLabel>อัพโหลดรูป</FormLabel>
-                <FormControl>
-                  <Input
+        <CardContent>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* ================= IMAGES ================= */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Images</h3>
+
+              <Button type="button" variant="outline" asChild>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <FiPlus /> Upload
+                  <input
                     type="file"
-                    accept="image/*"
                     multiple
-                    onChange={handleFilesChange}
+                    hidden
+                    accept="image/*,video/*"
+                    onChange={(e) => handleUploadImages(e.target.files)}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                </label>
+              </Button>
 
-              {/* Preview + Select + Switch */}
-              {files.length > 0 && (
-                <div className="mt-4 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-80 overflow-auto">
-                  {files.map((f, index) => (
-                    <div
-                      key={index}
-                      className="border rounded-md p-2 flex flex-col items-center gap-2 relative"
-                    >
-                      <img
-                        src={f.preview} // ใช้ preview ที่สร้างไว้
-                        alt={`preview-${index}`}
-                        className="w-24 h-24 object-cover rounded-md"
-                      />
+              <div className="grid grid-cols-[repeat(auto-fill,200px)] gap-4">
+                {images.map((img, index) => (
+                  <div
+                    key={index}
+                    className="border rounded-md p-2 space-y-2 w-[200px]"
+                  >
+                    {/* PREVIEW */}
+                    <div className="relative w-full aspect-square bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                      {img.type === "video" ? (
+                        <video
+                          src={img.preview}
+                          controls
+                          className="max-w-full max-h-full object-contain"
+                        />
+                      ) : (
+                        <Image
+                          src={img.preview}
+                          alt=""
+                          fill
+                          className="h-auto object-contain"
+                        />
+                      )}
+                    </div>
 
-                      {/* Remove button */}
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        className="absolute top-1 right-1 p-1"
-                        onClick={() => handleRemoveFile(index)}
-                      >
-                        <FiTrash2 />
-                      </Button>
-
-                      {/* Select */}
-                      <Select
-                        value={f.type}
-                        onValueChange={(value) =>
-                          handleTypeChange(
-                            index,
-                            value as "video" | "slide" | "cover"
-                          )
-                        }
-                        disabled={f.isCoverSwitch}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="video">Video</SelectItem>
-                          <SelectItem value="slide">Slide</SelectItem>
-                          <SelectItem value="cover">Cover</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {/* Switch */}
-                      <div className="flex items-center gap-2">
-                        <span>Cover</span>
+                    {/* COVER SWITCH */}
+                    {img.type !== "video" && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Cover</span>
                         <SwitchPrimitive.Root
-                          checked={f.isCoverSwitch}
-                          onCheckedChange={(value) =>
-                            handleSwitchChange(index, value as boolean)
+                          checked={img.is_cover}
+                          onCheckedChange={(checked) =>
+                            setImages((prev) =>
+                              prev.map((p, i) => ({
+                                ...p,
+                                is_cover: i === index ? checked : false,
+                                type:
+                                  i === index && checked
+                                    ? "cover"
+                                    : p.type === "cover"
+                                    ? "slide"
+                                    : p.type,
+                              }))
+                            )
                           }
-                          className={`w-10 h-6 rounded-full ${
-                            f.isCoverSwitch ? "bg-blue-500" : "bg-gray-300"
-                          } relative transition-colors`}
+                          className="relative inline-flex h-6 w-11 rounded-full
+                data-[state=checked]:bg-green-500
+                data-[state=unchecked]:bg-gray-300"
                         >
-                          <span
-                            className={`block w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${
-                              f.isCoverSwitch
-                                ? "translate-x-4"
-                                : "translate-x-0"
-                            }`}
+                          <SwitchPrimitive.Thumb
+                            className="block h-5 w-5 bg-white rounded-full
+                translate-x-0 data-[state=checked]:translate-x-5 transition"
                           />
                         </SwitchPrimitive.Root>
                       </div>
+                    )}
+
+                    {/* TYPE */}
+                    <div className="text-xs text-gray-500 text-center uppercase">
+                      {img.type}
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
 
-            <CardContent>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-5"
-              >
-                {/* Product Name */}
-                <FormField
-                  control={form.control}
-                  name="productName"
-                  rules={{ required: "กรุณากรอกชื่อสินค้า" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ชื่อสินค้า</FormLabel>
-                      <FormControl>
-                        <Input placeholder="กรอกชื่อสินค้า" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Variants */}
-                {variantFields.map((variant, vIndex) => (
-                  <VariantItem
-                    key={variant.id}
-                    vIndex={vIndex}
-                    control={form.control}
-                    register={form.register}
-                    removeVariant={removeVariant}
-                  />
+                    {/* DELETE */}
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                      onClick={() =>
+                        setImages((prev) => prev.filter((_, i) => i !== index))
+                      }
+                    >
+                      <FiTrash2 className="mr-1" /> Delete
+                    </Button>
+                  </div>
                 ))}
+              </div>
+            </div>
 
-                {/* Add Variant */}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() =>
-                    appendVariant({
-                      variant_name: "",
-                      inventories: [
-                        { inventory_name: "", price: "", quantity: 0 },
-                      ],
-                    })
-                  }
-                >
-                  <FiPlus /> เพิ่ม Variant
-                </Button>
+            {/* ================= TEXT ================= */}
+            <FormField
+              control={control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-                {/* Category */}
-                <FormField
-                  control={form.control}
-                  name="category"
-                  rules={{ required: "กรุณาเลือกหมวดหมู่" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>หมวดหมู่</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="เลือกหมวดหมู่" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="electronics">
-                              อิเล็กทรอนิกส์
-                            </SelectItem>
-                            <SelectItem value="clothing">เสื้อผ้า</SelectItem>
-                            <SelectItem value="accessories">
-                              เครื่องประดับ
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Brand</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-                {/* Status */}
-                <FormField
-                  control={form.control}
-                  name="status"
-                  rules={{ required: "กรุณาเลือกสถานะ" }}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>สถานะ</FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="เลือกสถานะ" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="in_stock">พร้อมขาย</SelectItem>
-                            <SelectItem value="out_of_stock">
-                              สินค้าหมด
-                            </SelectItem>
-                            <SelectItem value="pre_order">
-                              พรีออเดอร์
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <FormField
+              control={control}
+              name="short_description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Short Description</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-                <div className="flex justify-center mt-5">
-                  <Button type="submit">Submit</Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            <FormField
+              control={control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={control}
+              name="id_category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category ID</FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* ================= VARIANTS ================= */}
+            {fields.map((_, vIndex) => (
+              <VariantItem
+                key={vIndex}
+                vIndex={vIndex}
+                control={control}
+                register={form.register}
+                removeVariant={remove}
+              />
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                append({
+                  variant_name: "",
+                  inventories: [{ inventory_name: "", price: 0, stock: 0 }],
+                })
+              }
+            >
+              <FiPlus /> Add Variant
+            </Button>
+
+            <Button type="submit" className="w-full">
+              Create Product
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </Form>
   );
 }

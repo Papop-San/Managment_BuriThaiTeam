@@ -37,7 +37,6 @@ export interface AccountResponse {
   data: AccountPagination;
 }
 
-// -------- form types ----------
 export type GenderType = "male" | "female" | "other";
 
 export type AccountFormValues = {

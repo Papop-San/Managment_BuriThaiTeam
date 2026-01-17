@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/pagination";
 import { SidebarComponent } from "../components/Sidebar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown ,LoaderIcon } from "lucide-react";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
 import { Input } from "@/components/ui/input";
 import {
@@ -206,7 +206,7 @@ export default function OrderManagement() {
   const table = useReactTable({
     data: tableOrders,
     columns,
-    state: { sorting }, // 🔧 FIX: ไม่มี globalFilter
+    state: { sorting },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -288,8 +288,9 @@ export default function OrderManagement() {
             </div>
 
             {loading ? (
-              <div className="text-center py-10 text-gray-500 text-lg">
-                Loading orders...
+                <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                <LoaderIcon className="h-10 w-10 animate-spin text-gray-500" />
+                <p className="text-gray-500 text-lg">Loading data...</p>
               </div>
             ) : error ? (
               <div className="text-center py-10 text-red-500 text-lg">

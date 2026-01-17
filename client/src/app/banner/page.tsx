@@ -88,7 +88,6 @@ export default function Banner() {
       id: "select",
       size: 56,
       header: ({ table }) => (
-        // ✅ FIX: center + spacing
         <div className="flex justify-center pl-2">
           <Checkbox
             checked={
@@ -102,7 +101,6 @@ export default function Banner() {
         </div>
       ),
       cell: ({ row }) => (
-        // ✅ FIX: center + spacing
         <div className="flex justify-center pl-2">
           <Checkbox
             checked={row.getIsSelected()}
