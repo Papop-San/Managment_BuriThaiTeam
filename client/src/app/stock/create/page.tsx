@@ -18,7 +18,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 
-import * as SwitchPrimitive from "@radix-ui/react-switch";
+import { Switch } from "@/components/ui/switch";
 
 /* ===================== TYPES ===================== */
 
@@ -153,6 +153,9 @@ export default function CreateProduct() {
   });
 
   /* ===================== IMAGE UPLOAD ===================== */
+  const isVideoFile = (url: string) => {
+    return /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(url);
+  };
 
   const handleUploadImages = (files: FileList | null) => {
     if (!files) return;
@@ -284,31 +287,21 @@ export default function CreateProduct() {
                     {img.type !== "video" && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm">Cover</span>
-                        <SwitchPrimitive.Root
-                          checked={img.is_cover}
-                          onCheckedChange={(checked) =>
-                            setImages((prev) =>
-                              prev.map((p, i) => ({
-                                ...p,
-                                is_cover: i === index ? checked : false,
-                                type:
-                                  i === index && checked
-                                    ? "cover"
-                                    : p.type === "cover"
-                                    ? "slide"
-                                    : p.type,
-                              }))
-                            )
-                          }
-                          className="relative inline-flex h-6 w-11 rounded-full
-                data-[state=checked]:bg-green-500
-                data-[state=unchecked]:bg-gray-300"
-                        >
-                          <SwitchPrimitive.Thumb
-                            className="block h-5 w-5 bg-white rounded-full
-                translate-x-0 data-[state=checked]:translate-x-5 transition"
-                          />
-                        </SwitchPrimitive.Root>
+<Switch
+              checked={!!img.is_cover}
+              onCheckedChange={(checked) =>
+                setImages((prev) =>
+                  prev.map((p, i) => {
+        
+                    if (isVideoFile(p.preview)) return p;
+                    if (i === index) {
+                      return { ...p, is_cover: checked };
+                    }
+                    return { ...p, is_cover: false };
+                  })
+                )
+              }
+            />
                       </div>
                     )}
 

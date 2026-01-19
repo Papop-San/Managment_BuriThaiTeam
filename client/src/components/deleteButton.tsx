@@ -49,7 +49,7 @@ export default function DeleteButton({
       if (!res.ok) throw new Error(data.message || "Delete failed");
 
       onSuccess?.();
-      setOpen(false); // ปิด Dialog หลังลบ
+      setOpen(false); 
     } catch (error) {
       console.error(error);
       setError("Something went wrong");

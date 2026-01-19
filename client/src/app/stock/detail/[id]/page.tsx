@@ -2,11 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FiArrowLeft, FiPlus, FiMinus, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiMinus } from "react-icons/fi";
 import { LoaderIcon } from "lucide-react";
 import {
   Form,
@@ -17,31 +17,28 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import * as SwitchPrimitive from "@radix-ui/react-switch";
-
-import { StockItem } from "@/types/stock";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 
 /* ===================== TYPES ===================== */
 
-type Product = {
-  id: number;
-  name: string;
-};
-
 type UploadedFile = {
+  id?: number;
   file: File | null;
   preview: string;
-  type: "cover" | "slide" | "video";
+  type: "cover" | "slide";
   is_cover: boolean;
 };
 
 type Inventory = {
+  inventory_id: number;
   inventory_name: string;
   price: number;
   stock: number;
 };
 
 type ProductVariant = {
+  variant_id: number;
   variant_name: string;
   inventories: Inventory[];
 };
@@ -61,10 +58,10 @@ export default function CreateProduct() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
 
-  const [data, setData] = useState<Product | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<UploadedFile[]>([]);
+  const [selectedImageIds, setSelectedImageIds] = useState<number[]>([]);
 
   const form = useForm<ProductFormValues>({
     defaultValues: {
@@ -86,8 +83,8 @@ export default function CreateProduct() {
 
   /* ===================== VARIANT ITEM ===================== */
 
-  const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
-    const { fields, append, remove } = useFieldArray({
+  const VariantItem = ({ vIndex, control, register }: any) => {
+    const { fields, append, remove: removeInventory } = useFieldArray({
       control,
       name: `variants.${vIndex}.inventories`,
     });
@@ -105,7 +102,7 @@ export default function CreateProduct() {
                   type="button"
                   variant="destructive"
                   size="sm"
-                  onClick={() => removeVariant(vIndex)}
+                  onClick={() => onDeleteVariant(vIndex)}
                 >
                   <FiMinus />
                 </Button>
@@ -143,7 +140,7 @@ export default function CreateProduct() {
               type="button"
               variant="destructive"
               size="sm"
-              onClick={() => remove(iIndex)}
+              onClick={() => onDeleteInventory(vIndex, iIndex, removeInventory)}
             >
               <FiMinus />
             </Button>
@@ -163,7 +160,7 @@ export default function CreateProduct() {
   };
 
   /* ===================== FETCH ===================== */
-
+  // Fetch Normal
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -194,6 +191,7 @@ export default function CreateProduct() {
       setImages(
         product.images.map((img: any) => ({
           file: null,
+          id: img.img_id,
           preview: img.url,
           type: img.type,
           is_cover: img.is_cover,
@@ -206,42 +204,182 @@ export default function CreateProduct() {
     }
   };
 
+  //Submit Form Update
+  const onSubmit = async (values: ProductFormValues) => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(values),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+    } catch (err) {
+      setError("Failed to update product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Delete only Variant 
+  const onDeleteVariant = async (vIndex: number) => {
+    const variant = form.getValues(`variants.${vIndex}`);
+
+    if (!variant.variant_id) {
+      remove(vIndex);
+      return;
+    }
+  
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/variants`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ ids: [variant.variant_id] }),
+        }
+      );
+  
+      if (!res.ok) throw new Error(await res.text());
+      remove(vIndex);
+    } catch (err) {
+      setError("Failed to delete variant");
+      console.log(err)
+
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onDeleteInventory = async (
+    vIndex: number,
+    iIndex: number,
+    removeInventory: (index: number) => void
+  ) => {
+    const inventory = form.getValues(
+      `variants.${vIndex}.inventories.${iIndex}`
+    );
+  
+    if (!inventory.inventory_id) {
+      removeInventory(iIndex);
+      return;
+    }
+  
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/inventories`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ ids: [inventory.inventory_id] }),
+        }
+      );
+  
+      if (!res.ok) throw new Error(await res.text());
+      removeInventory(iIndex); 
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
+
+
   useEffect(() => {
-    if (params.id) fetchData();
+    if (!params.id) return;
+    fetchData();
   }, [params.id]);
   /* ===================== IMAGE UPLOAD ===================== */
 
+  const isVideoFile = (url: string) => {
+    return /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(url);
+  };
+
+  //Upload Handle
   const handleUploadImages = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newImages: UploadedFile[] = Array.from(files).map((file) => {
-      const isVideo = file.type.startsWith("video/");
+    const newImages: UploadedFile[] = Array.from(files).map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      type: "slide",
+      is_cover: false,
+    }));
 
-      return {
-        file,
-        preview: URL.createObjectURL(file),
-        type: isVideo ? "video" : "slide",
-        is_cover: false,
-      };
+    setImages((prev) => [...prev, ...newImages]);
+  };
+  //Submit Imgaes for Insert
+  const handleSumitImages = async () => {
+    const newImages = images.filter((img) => img.file instanceof File);
+
+    if (newImages.length === 0) {
+      alert("No new files to upload");
+      return;
+    }
+
+    const formData = new FormData();
+
+    newImages.forEach((img) => {
+      formData.append("images", img.file as File);
     });
 
-    setImages((prev) => {
-      const hasCover = prev.some((img) => img.is_cover);
+    formData.append(
+      "images_meta",
+      JSON.stringify(
+        newImages.map((img) => ({
+          type: img.is_cover ? "cover" : "slide",
+          is_cover: img.is_cover,
+        }))
+      )
+    );
 
-      return [
-        ...prev,
-        ...newImages.map((img, i) => {
-          if (img.type === "video") return img;
-
-          const isCover = !hasCover && i === 0;
-          return {
-            ...img,
-            is_cover: isCover,
-            type: isCover ? "cover" : "slide",
-          };
-        }),
-      ];
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`, {
+      method: "PUT",
+      body: formData,
+      credentials: "include",
     });
+
+    fetchData();
+  };
+  // Delte Image
+  const deleteImages = async () => {
+    if (selectedImageIds.length === 0) return;
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}/images`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ image_ids: selectedImageIds }),
+        }
+      );
+
+      if (!res.ok) throw new Error(await res.text());
+
+      setImages((prev) =>
+        prev.filter((img) => !img.id || !selectedImageIds.includes(img.id))
+      );
+
+      setSelectedImageIds([]);
+    } catch {
+      setError("Something went wrong");
+    }
   };
 
   /* ===================== UI ===================== */
@@ -272,102 +410,131 @@ export default function CreateProduct() {
           ) : (
             <div>
               <Form {...form} key={params.id}>
-                <form className="space-y-6">
+                <form
+                  className="space-y-6"
+                  onSubmit={form.handleSubmit(onSubmit)}
+                >
                   {/* ================= IMAGES ================= */}
                   <div className="space-y-4">
                     <h3 className="font-semibold">Images</h3>
 
-                    <Button type="button" variant="outline" asChild>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <FiPlus /> Upload
-                        <input
-                          type="file"
-                          multiple
-                          hidden
-                          accept="image/*,video/*"
-                          onChange={(e) => handleUploadImages(e.target.files)}
-                        />
-                      </label>
-                    </Button>
+                    {/* ACTIONS */}
+                    <div className="flex gap-4">
+                      <Button type="button" variant="outline" asChild>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <FiPlus /> Upload
+                          <input
+                            type="file"
+                            multiple
+                            hidden
+                            accept="image/*,video/*"
+                            onChange={(e) => {
+                              handleUploadImages(e.target.files);
+                              e.currentTarget.value = "";
+                            }}
+                          />
+                        </label>
+                      </Button>
 
+                      <Button
+                        type="button"
+                        onClick={handleSumitImages}
+                        hidden={!images.some((img) => img.file)}
+                      >
+                        Save Images
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        onClick={deleteImages}
+                        hidden={selectedImageIds.length === 0}
+                      >
+                        Delete Selected Images
+                      </Button>
+                    </div>
+
+                    {/* GRID */}
                     <div className="grid grid-cols-[repeat(auto-fill,200px)] gap-4">
-                      {images.map((img, index) => (
-                        <div
-                          key={index}
-                          className="border rounded-md p-2 space-y-2 w-[200px]"
-                        >
-                          {/* PREVIEW */}
-                          <div className="relative w-full aspect-square bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                            {img.type === "video" ? (
-                              <video
-                                src={img.preview}
-                                controls
-                                className="max-w-full max-h-full object-contain"
-                              />
-                            ) : (
-                              <Image
-                                src={img.preview}
-                                alt=""
-                                fill
-                                className="h-auto object-contain"
-                              />
+                      {images.map((img, index) => {
+                        const isVideo = isVideoFile(img.preview);
+
+                        return (
+                          <div
+                            key={img.id ?? img.preview}
+                            className="border rounded-md p-2 space-y-2 w-[200px]"
+                          >
+                            {img.id !== undefined && img.id !== null && (
+                              <div className="flex items-center gap-2">
+                                <Checkbox
+                                  className="h-5 w-5 border border-input"
+                                  checked={selectedImageIds.includes(img.id)}
+                                  onCheckedChange={(checked) => {
+                                    const isChecked = checked === true;
+                                    setSelectedImageIds((prev) =>
+                                      isChecked
+                                        ? [...prev, img.id!]
+                                        : prev.filter((id) => id !== img.id)
+                                    );
+                                  }}
+                                />
+                              </div>
+                            )}
+
+                            {/* PREVIEW */}
+                            <div className="relative w-full aspect-square bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                              {isVideo ? (
+                                <video
+                                  src={img.preview}
+                                  controls
+                                  preload="metadata"
+                                  className="max-w-full max-h-full object-contain"
+                                />
+                              ) : (
+                                <Image
+                                  src={img.preview}
+                                  alt=""
+                                  fill
+                                  priority
+                                  className="object-contain"
+                                />
+                              )}
+                            </div>
+
+                            {/* COVER SWITCH (image เท่านั้น) */}
+                            {!isVideo && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm">Cover</span>
+                                <Switch
+                                  checked={img.is_cover}
+                                  onCheckedChange={(checked) =>
+                                    setImages((prev) =>
+                                      prev.map((p, i) => {
+                                        if (isVideoFile(p.preview)) return p;
+
+                                        if (i === index) {
+                                          return {
+                                            ...p,
+                                            is_cover: checked,
+                                            type: checked ? "cover" : "slide",
+                                          };
+                                        }
+
+                                        return {
+                                          ...p,
+                                          is_cover: false,
+                                          type: "slide",
+                                        };
+                                      })
+                                    )
+                                  }
+                                />
+                              </div>
                             )}
                           </div>
-
-                          {/* COVER SWITCH */}
-                          {img.type !== "video" && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm">Cover</span>
-                              <SwitchPrimitive.Root
-                                checked={img.is_cover}
-                                onCheckedChange={(checked) =>
-                                  setImages((prev) =>
-                                    prev.map((p, i) => ({
-                                      ...p,
-                                      is_cover: i === index ? checked : false,
-                                      type:
-                                        i === index && checked
-                                          ? "cover"
-                                          : p.type === "cover"
-                                          ? "slide"
-                                          : p.type,
-                                    }))
-                                  )
-                                }
-                                className="relative inline-flex h-6 w-11 rounded-full
-                              data-[state=checked]:bg-green-500
-                              data-[state=unchecked]:bg-gray-300"
-                              >
-                                <SwitchPrimitive.Thumb
-                                  className="block h-5 w-5 bg-white rounded-full
-                translate-x-0 data-[state=checked]:translate-x-5 transition"
-                                />
-                              </SwitchPrimitive.Root>
-                            </div>
-                          )}
-
-                          {/* TYPE */}
-                          <div className="text-xs text-gray-500 text-center uppercase">
-                            {img.type}
-                          </div>
-
-                          {/* DELETE */}
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="w-full"
-                            onClick={() =>
-                              setImages((prev) =>
-                                prev.filter((_, i) => i !== index)
-                              )
-                            }
-                          >
-                            <FiTrash2 className="mr-1" /> Delete
-                          </Button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
+
                   {/* ================= TEXT ================= */}
                   <FormField
                     control={control}
@@ -457,7 +624,11 @@ export default function CreateProduct() {
                   >
                     <FiPlus /> Add Variant
                   </Button>
+                  <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
                 </form>
+
               </Form>
             </div>
           )}

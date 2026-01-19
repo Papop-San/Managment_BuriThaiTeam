@@ -72,13 +72,18 @@ export default function StockPage() {
         throw new Error(result.status || "Fetch error");
       }
 
-      const flatRows: StockRow[] = result.data.data.flatMap((product) =>
-        product.variants.flatMap((variant) =>
-          variant.inventories.map((inv: InventoryItems) => ({
+      const flatRows: StockRow[] = result.data.data.flatMap((product) => {
+        if (!product.variants || product.variants.length === 0) return [];
+
+        return product.variants.flatMap((variant) => {
+          if (!variant.inventories || variant.inventories.length === 0)
+            return [];
+
+          return variant.inventories.map((inv: InventoryItems) => ({
             product_id: product.id_products,
             product_name: product.name,
             image_url: product.images?.[0]?.url,
-            category_name: product.category.name,
+            category_name: product.category?.name ?? "-",
 
             variant_id: variant.variant_id,
             variant_name: variant.variant_name,
@@ -87,9 +92,10 @@ export default function StockPage() {
             inventory_name: inv.inventory_name,
             price: inv.price,
             stock: inv.stock,
-          }))
-        )
-      );
+          }));
+        });
+      });
+
       setStockPagination(result.data);
       setStockRows(flatRows);
     } catch (err) {
@@ -170,6 +176,7 @@ export default function StockPage() {
                 alt={name}
                 width={100}
                 height={60}
+                priority
                 className="rounded-md object-cover border"
               />
             ) : (
@@ -289,10 +296,9 @@ export default function StockPage() {
     return range;
   }, [pageCount, pageIndex]);
 
-
   const selectedIds = table
-  .getSelectedRowModel()
-  .rows.map((row) => row.original.inventory_id)
+    .getSelectedRowModel()
+    .rows.map((row) => row.original.inventory_id);
 
   return (
     <SidebarComponent>
@@ -324,11 +330,11 @@ export default function StockPage() {
                 <DeleteButton
                   endpoint="products/inventories"
                   ids={selectedIds}
-                  confirmMessage = "ต้องการลบรายการระดับ Inventory ไหม?"
+                  confirmMessage="ต้องการลบรายการระดับ Inventory ไหม?"
                   disabled={selectedIds.length === 0}
                   onSuccess={async () => {
-                    table.resetRowSelection(); 
-                    await fetchData();         
+                    table.resetRowSelection();
+                    await fetchData();
                   }}
                 />
               </div>
@@ -356,23 +362,29 @@ export default function StockPage() {
                   ))}
                 </TableHeader>
                 <TableBody>
-                  {table.getRowModel().rows.length > 0 &&
-                    table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => (
+                  {table.getRowModel().rows.length > 0
+                    ? table.getRowModel().rows.map((row) => (
+                        <TableRow key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <TableCell key={cell.id} className="text-center">
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                              )}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      ))
+                    : !loading && (
+                        <TableRow>
                           <TableCell
-                            key={cell.id}
-                            style={{ width: cell.column.getSize() }}
-                            className="text-center"
+                            colSpan={columns.length}
+                            className="text-center py-10"
                           >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
+                            ไม่มีข้อมูล Inventory
                           </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                        </TableRow>
+                      )}
                 </TableBody>
               </Table>
             </div>
