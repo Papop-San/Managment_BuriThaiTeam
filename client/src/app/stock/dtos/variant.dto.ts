@@ -16,7 +16,6 @@ export type VariantItemProps = {
   vIndex: number;
   control: Control<ProductFormValues>;
   register: UseFormRegister<ProductFormValues>;
-  removeVariant: UseFieldArrayRemove; 
   onDeleteVariant: (vIndex: number) => void;
   onDeleteInventory: (
     vIndex: number,

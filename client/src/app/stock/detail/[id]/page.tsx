@@ -25,11 +25,10 @@ import { ProductFormValues } from "../../dtos/product.dto";
 import { VariantItemProps } from "../../dtos/variant.dto";
 import { ProductImage } from "../../dtos/inventory.dto";
 
-/* ===================== TYPES ===================== */
 
 /* ===================== MAIN ===================== */
 
-export default function CreateProduct() {
+export default function ProductDetails() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
 
@@ -52,7 +51,7 @@ export default function CreateProduct() {
 
   const { control, reset } = form;
 
-  const { fields, append, remove, replace } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "variants",
   });
@@ -607,12 +606,15 @@ export default function CreateProduct() {
                   />
                   {/* ================= VARIANTS ================= */}
                   {fields.map((_, vIndex) => (
-                    <VariantItem
-                      key={vIndex}
-                      vIndex={vIndex}
-                      control={control}
-                      register={form.register}
-                    />
+                 <VariantItem
+                 key={vIndex}  
+                 vIndex={vIndex}
+                 control={control}
+                 register={form.register}
+                 onDeleteVariant={onDeleteVariant}
+                 onDeleteInventory={onDeleteInventory}
+               />
+               
                   ))}
 
                   <Button

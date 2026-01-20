@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
-import { BannerSwitch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 import CreatePaymentForm from "./components/CreatePaymentForm";
 import { LoaderIcon } from "lucide-react";
 import {
@@ -164,7 +164,7 @@ export default function Payment() {
       header: "Active",
       cell: ({ row }) => (
         <div className="flex justify-center">
-          <BannerSwitch checked={row.original.is_active} />
+          <Switch checked={row.original.is_active} />
         </div>
       ),
     },

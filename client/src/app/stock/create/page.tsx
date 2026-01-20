@@ -19,39 +19,19 @@ import {
 } from "@/components/ui/form";
 
 import { Switch } from "@/components/ui/switch";
-
-/* ===================== TYPES ===================== */
-
-type UploadedFile = {
-  file: File | null;
-  preview: string;
-  type: "cover" | "slide" | "video";
-  is_cover: boolean;
-};
-
-type Inventory = {
-  inventory_name: string;
-  price: number; // ✅ FIX
-  stock: number;
-};
-
-type ProductVariant = {
-  variant_name: string;
-  inventories: Inventory[];
-};
-
-type ProductFormValues = {
-  name: string; // ✅ FIX
-  brand: string;
-  short_description: string;
-  description: string;
-  id_category: string;
-  variants: ProductVariant[];
-};
+import { UploadedFile } from "../dtos/upload-file.dto";
+import { ProductFormValues } from "../dtos/product.dto";
+import { VariantItemProps } from "../dtos/variant.dto";
 
 /* ===================== VARIANT ITEM ===================== */
 
-const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
+const VariantItem = ({
+  vIndex,
+  control,
+  register,
+  onDeleteVariant,
+  onDeleteInventory,
+}: VariantItemProps) => {
   const { fields, append, remove } = useFieldArray({
     control,
     name: `variants.${vIndex}.inventories`,
@@ -59,6 +39,7 @@ const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
 
   return (
     <div className="border p-4 rounded-md space-y-4">
+      {/* ===== Variant Name ===== */}
       <FormField
         control={control}
         name={`variants.${vIndex}.variant_name`}
@@ -70,34 +51,36 @@ const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
                 type="button"
                 variant="destructive"
                 size="sm"
-                onClick={() => removeVariant(vIndex)}
+                onClick={() => onDeleteVariant(vIndex)}
               >
                 <FiMinus />
               </Button>
             </div>
             <FormControl>
-              <Input {...field} />
+              <Input {...field} placeholder="Variant name" />
             </FormControl>
           </FormItem>
         )}
       />
 
+      {/* ===== Inventories ===== */}
       {fields.map((inv, iIndex) => (
-        <div key={inv.id} className="flex gap-2">
+        <div key={inv.id} className="flex gap-2 items-center">
           <Input
             {...register(
               `variants.${vIndex}.inventories.${iIndex}.inventory_name`
             )}
             placeholder="Inventory"
           />
+
           <Input
             type="number"
-            {...register(
-              `variants.${vIndex}.inventories.${iIndex}.price`,
-              { valueAsNumber: true } // ✅ FIX
-            )}
+            {...register(`variants.${vIndex}.inventories.${iIndex}.price`, {
+              valueAsNumber: true,
+            })}
             placeholder="Price"
           />
+
           <Input
             type="number"
             {...register(`variants.${vIndex}.inventories.${iIndex}.stock`, {
@@ -105,17 +88,19 @@ const VariantItem = ({ vIndex, control, register, removeVariant }: any) => {
             })}
             placeholder="Stock"
           />
+
           <Button
             type="button"
             variant="destructive"
             size="sm"
-            onClick={() => remove(iIndex)}
+            onClick={() => onDeleteInventory(vIndex, iIndex, remove)}
           >
             <FiMinus />
           </Button>
         </div>
       ))}
 
+      {/* ===== Add Inventory ===== */}
       <Button
         type="button"
         variant="outline"
@@ -147,47 +132,39 @@ export default function CreateProduct() {
 
   const { control } = form;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append , remove} = useFieldArray({
     control,
     name: "variants",
   });
+  const onDeleteVariant = (vIndex: number) => {
+    remove(vIndex); 
+  };
+  
+  const onDeleteInventory = (
+    _vIndex: number,
+    iIndex: number,
+    removeInventory: (index: number) => void
+  ) => {
+    removeInventory(iIndex); 
+  };
 
   /* ===================== IMAGE UPLOAD ===================== */
   const isVideoFile = (url: string) => {
     return /\.(mp4|webm|ogg|mov|avi|mkv)$/i.test(url);
   };
 
+  //Upload Handle
   const handleUploadImages = (files: FileList | null) => {
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newImages: UploadedFile[] = Array.from(files).map((file) => {
-      const isVideo = file.type.startsWith("video/");
+    const newImages: UploadedFile[] = Array.from(files).map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      type: "slide",
+      is_cover: false,
+    }));
 
-      return {
-        file,
-        preview: URL.createObjectURL(file),
-        type: isVideo ? "video" : "slide",
-        is_cover: false,
-      };
-    });
-
-    setImages((prev) => {
-      const hasCover = prev.some((img) => img.is_cover);
-
-      return [
-        ...prev,
-        ...newImages.map((img, i) => {
-          if (img.type === "video") return img;
-
-          const isCover = !hasCover && i === 0;
-          return {
-            ...img,
-            is_cover: isCover,
-            type: isCover ? "cover" : "slide",
-          };
-        }),
-      ];
-    });
+    setImages((prev) => [...prev, ...newImages]);
   };
 
   /* ===================== SUBMIT ===================== */
@@ -258,71 +235,77 @@ export default function CreateProduct() {
                   />
                 </label>
               </Button>
-
               <div className="grid grid-cols-[repeat(auto-fill,200px)] gap-4">
-                {images.map((img, index) => (
-                  <div
-                    key={index}
-                    className="border rounded-md p-2 space-y-2 w-[200px]"
-                  >
-                    {/* PREVIEW */}
-                    <div className="relative w-full aspect-square bg-gray-100 rounded overflow-hidden flex items-center justify-center">
-                      {img.type === "video" ? (
-                        <video
-                          src={img.preview}
-                          controls
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      ) : (
-                        <Image
-                          src={img.preview}
-                          alt=""
-                          fill
-                          className="h-auto object-contain"
-                        />
+                {images.map((img, index) => {
+                  const isVideo = isVideoFile(img.preview);
+                  return (
+                    <div
+                      key={img.id ?? img.preview}
+                      className="relative border rounded-md p-2 space-y-2 w-[200px]"
+                    >
+                      {/* ❌ DELETE (เฉพาะของที่ยังไม่ save) */}
+                      {!img.id && (
+                        <button
+                          type="button"
+                          className="absolute top-1 right-1 z-10 bg-white rounded-full p-1 shadow"
+                          onClick={() =>
+                            setImages((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            )
+                          }
+                        >
+                          <FiTrash2 className="text-red-500 w-4 h-4" />
+                        </button>
+                      )}
+                      {/* PREVIEW */}
+                      <div className="relative w-full aspect-square bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                        {isVideo ? (
+                          <video
+                            src={img.preview}
+                            controls
+                            preload="metadata"
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        ) : (
+                          <Image
+                            src={img.preview}
+                            alt=""
+                            fill
+                            className="object-contain"
+                          />
+                        )}
+                      </div>
+                      {/* SWITCH COVER (image only) */}
+                      {!isVideo && (
+                        <div className="flex justify-between items-center">
+                          <Switch
+                            checked={img.is_cover}
+                            onCheckedChange={(check) => {
+                              setImages((prev) =>
+                                prev.map((p, i) => {
+                                  if (p.file?.type.startsWith("video/"))
+                                    return p;
+                                  if (i === index) {
+                                    return {
+                                      ...p,
+                                      is_cover: check,
+                                      type: check ? "cover" : "slide",
+                                    };
+                                  }
+                                  return {
+                                    ...p,
+                                    is_cover: false,
+                                    type: "slide",
+                                  };
+                                })
+                              );
+                            }}
+                          />
+                        </div>
                       )}
                     </div>
-
-                    {/* COVER SWITCH */}
-                    {img.type !== "video" && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Cover</span>
-<Switch
-              checked={!!img.is_cover}
-              onCheckedChange={(checked) =>
-                setImages((prev) =>
-                  prev.map((p, i) => {
-        
-                    if (isVideoFile(p.preview)) return p;
-                    if (i === index) {
-                      return { ...p, is_cover: checked };
-                    }
-                    return { ...p, is_cover: false };
-                  })
-                )
-              }
-            />
-                      </div>
-                    )}
-
-                    {/* TYPE */}
-                    <div className="text-xs text-gray-500 text-center uppercase">
-                      {img.type}
-                    </div>
-
-                    {/* DELETE */}
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                      onClick={() =>
-                        setImages((prev) => prev.filter((_, i) => i !== index))
-                      }
-                    >
-                      <FiTrash2 className="mr-1" /> Delete
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
@@ -393,13 +376,14 @@ export default function CreateProduct() {
             />
 
             {/* ================= VARIANTS ================= */}
-            {fields.map((_, vIndex) => (
+            {fields.map((field, vIndex) => (
               <VariantItem
-                key={vIndex}
+                key={field.id} // ✅ สำคัญมาก
                 vIndex={vIndex}
                 control={control}
                 register={form.register}
-                removeVariant={remove}
+                onDeleteVariant={onDeleteVariant}
+                onDeleteInventory={onDeleteInventory}
               />
             ))}
 
