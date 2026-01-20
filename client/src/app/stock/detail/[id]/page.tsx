@@ -25,7 +25,6 @@ import { ProductFormValues } from "../../dtos/product.dto";
 import { VariantItemProps } from "../../dtos/variant.dto";
 import { ProductImage } from "../../dtos/inventory.dto";
 
-
 /* ===================== MAIN ===================== */
 
 export default function ProductDetails() {
@@ -58,12 +57,12 @@ export default function ProductDetails() {
 
   /* ===================== VARIANT ITEM ===================== */
 
-  const VariantItem = ({ vIndex, control, register }:VariantItemProps ) => {
+  const VariantItem = ({ vIndex, control, register }: VariantItemProps) => {
     const {
       fields,
       append,
       remove: removeInventory,
-        } = useFieldArray({
+    } = useFieldArray({
       control,
       name: `variants.${vIndex}.inventories`,
     });
@@ -143,18 +142,18 @@ export default function ProductDetails() {
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     setError("");
-  
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`,
         { credentials: "include" }
       );
-  
+
       if (!res.ok) throw new Error("Failed to fetch");
-  
+
       const result = await res.json();
       const product = result.data;
-  
+
       reset({
         name: product.name,
         brand: product.brand,
@@ -163,7 +162,7 @@ export default function ProductDetails() {
         id_category: product.id_category,
         variants: product.variants,
       });
-  
+
       setImages(
         product.images.map((img: ProductImage) => ({
           file: null,
@@ -177,7 +176,6 @@ export default function ProductDetails() {
       setLoading(false);
     }
   }, [params.id, reset]);
-  
 
   //Submit Form Update
   const onSubmit = async (values: ProductFormValues) => {
@@ -199,7 +197,7 @@ export default function ProductDetails() {
       if (!res.ok) {
         throw new Error(await res.text());
       }
-    } catch (err) {
+    } catch  {
       setError("Failed to update product");
     } finally {
       setLoading(false);
@@ -352,7 +350,7 @@ export default function ProductDetails() {
       );
 
       if (!res.ok) throw new Error(await res.text());
-    } catch (err) {
+    } catch  {
       fetchData();
       setError("Failed to delete images");
     } finally {
@@ -606,15 +604,14 @@ export default function ProductDetails() {
                   />
                   {/* ================= VARIANTS ================= */}
                   {fields.map((_, vIndex) => (
-                 <VariantItem
-                 key={vIndex}  
-                 vIndex={vIndex}
-                 control={control}
-                 register={form.register}
-                 onDeleteVariant={onDeleteVariant}
-                 onDeleteInventory={onDeleteInventory}
-               />
-               
+                    <VariantItem
+                      key={vIndex}
+                      vIndex={vIndex}
+                      control={control}
+                      register={form.register}
+                      onDeleteVariant={onDeleteVariant}
+                      onDeleteInventory={onDeleteInventory}
+                    />
                   ))}
 
                   <Button
