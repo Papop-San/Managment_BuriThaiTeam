@@ -20,37 +20,12 @@ import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 
+import { UploadedFile } from "../../dtos/upload-file.dto";
+import { ProductFormValues } from "../../dtos/product.dto";
+import { VariantItemProps } from "../../dtos/variant.dto";
+import { ProductImage } from "../../dtos/inventory.dto";
+
 /* ===================== TYPES ===================== */
-
-type UploadedFile = {
-  id?: number;
-  file: File | null;
-  preview: string;
-  type: "cover" | "slide";
-  is_cover: boolean;
-};
-
-type Inventory = {
-  inventory_id: number;
-  inventory_name: string;
-  price: number;
-  stock: number;
-};
-
-type ProductVariant = {
-  variant_id: number;
-  variant_name: string;
-  inventories: Inventory[];
-};
-
-type ProductFormValues = {
-  name: string;
-  brand: string;
-  short_description: string;
-  description: string;
-  id_category: string;
-  variants: ProductVariant[];
-};
 
 /* ===================== MAIN ===================== */
 
@@ -62,6 +37,7 @@ export default function CreateProduct() {
   const [error, setError] = useState<string | null>(null);
   const [images, setImages] = useState<UploadedFile[]>([]);
   const [selectedImageIds, setSelectedImageIds] = useState<number[]>([]);
+  const [deletingIds, setDeletingIds] = useState<number[]>([]);
 
   const form = useForm<ProductFormValues>({
     defaultValues: {
@@ -83,8 +59,12 @@ export default function CreateProduct() {
 
   /* ===================== VARIANT ITEM ===================== */
 
-  const VariantItem = ({ vIndex, control, register }: any) => {
-    const { fields, append, remove: removeInventory } = useFieldArray({
+  const VariantItem = ({ vIndex, control, register }:VariantItemProps ) => {
+    const {
+      fields,
+      append,
+      remove: removeInventory,
+        } = useFieldArray({
       control,
       name: `variants.${vIndex}.inventories`,
     });
@@ -161,24 +141,21 @@ export default function CreateProduct() {
 
   /* ===================== FETCH ===================== */
   // Fetch Normal
-  const fetchData = async () => {
+  const fetchData = React.useCallback(async () => {
     setLoading(true);
     setError("");
+  
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`,
-        {
-          credentials: "include",
-        }
+        { credentials: "include" }
       );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch");
-      }
-
+  
+      if (!res.ok) throw new Error("Failed to fetch");
+  
       const result = await res.json();
       const product = result.data;
-
+  
       reset({
         name: product.name,
         brand: product.brand,
@@ -187,9 +164,9 @@ export default function CreateProduct() {
         id_category: product.id_category,
         variants: product.variants,
       });
-
+  
       setImages(
-        product.images.map((img: any) => ({
+        product.images.map((img: ProductImage) => ({
           file: null,
           id: img.img_id,
           preview: img.url,
@@ -197,12 +174,11 @@ export default function CreateProduct() {
           is_cover: img.is_cover,
         }))
       );
-    } catch (err) {
-      setError("Something went wrong");
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id, reset]);
+  
 
   //Submit Form Update
   const onSubmit = async (values: ProductFormValues) => {
@@ -231,7 +207,7 @@ export default function CreateProduct() {
     }
   };
 
-  // Delete only Variant 
+  // Delete only Variant
   const onDeleteVariant = async (vIndex: number) => {
     const variant = form.getValues(`variants.${vIndex}`);
 
@@ -239,7 +215,7 @@ export default function CreateProduct() {
       remove(vIndex);
       return;
     }
-  
+
     setLoading(true);
     try {
       const res = await fetch(
@@ -251,18 +227,18 @@ export default function CreateProduct() {
           body: JSON.stringify({ ids: [variant.variant_id] }),
         }
       );
-  
+
       if (!res.ok) throw new Error(await res.text());
       remove(vIndex);
     } catch (err) {
       setError("Failed to delete variant");
-      console.log(err)
-
+      console.log(err);
     } finally {
       setLoading(false);
     }
   };
 
+  // Delete Inventory
   const onDeleteInventory = async (
     vIndex: number,
     iIndex: number,
@@ -271,12 +247,12 @@ export default function CreateProduct() {
     const inventory = form.getValues(
       `variants.${vIndex}.inventories.${iIndex}`
     );
-  
+
     if (!inventory.inventory_id) {
       removeInventory(iIndex);
       return;
     }
-  
+
     setLoading(true);
     try {
       const res = await fetch(
@@ -288,21 +264,18 @@ export default function CreateProduct() {
           body: JSON.stringify({ ids: [inventory.inventory_id] }),
         }
       );
-  
+
       if (!res.ok) throw new Error(await res.text());
-      removeInventory(iIndex); 
+      removeInventory(iIndex);
     } finally {
       setLoading(false);
     }
   };
-  
-  
-
 
   useEffect(() => {
     if (!params.id) return;
     fetchData();
-  }, [params.id]);
+  }, [params.id, fetchData]);
   /* ===================== IMAGE UPLOAD ===================== */
 
   const isVideoFile = (url: string) => {
@@ -322,6 +295,7 @@ export default function CreateProduct() {
 
     setImages((prev) => [...prev, ...newImages]);
   };
+
   //Submit Imgaes for Insert
   const handleSumitImages = async () => {
     const newImages = images.filter((img) => img.file instanceof File);
@@ -359,6 +333,14 @@ export default function CreateProduct() {
   const deleteImages = async () => {
     if (selectedImageIds.length === 0) return;
 
+    const idsToDelete = [...selectedImageIds];
+
+    setDeletingIds(idsToDelete);
+    setImages((prev) =>
+      prev.filter((img) => !img.id || !idsToDelete.includes(img.id))
+    );
+    setSelectedImageIds([]);
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}/images`,
@@ -366,20 +348,38 @@ export default function CreateProduct() {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ image_ids: selectedImageIds }),
+          body: JSON.stringify({ image_ids: idsToDelete }),
         }
       );
 
       if (!res.ok) throw new Error(await res.text());
-
-      setImages((prev) =>
-        prev.filter((img) => !img.id || !selectedImageIds.includes(img.id))
-      );
-
-      setSelectedImageIds([]);
-    } catch {
-      setError("Something went wrong");
+    } catch (err) {
+      fetchData();
+      setError("Failed to delete images");
+    } finally {
+      setDeletingIds([]);
     }
+  };
+
+  // Update Status
+  const updateSwitch = async (imgId: number, is_cover: boolean) => {
+    const formData = new FormData();
+
+    formData.append(
+      "update_images",
+      JSON.stringify([
+        {
+          img_id: imgId,
+          is_cover: is_cover,
+        },
+      ])
+    );
+
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`, {
+      method: "PUT",
+      body: formData,
+      credentials: "include",
+    });
   };
 
   /* ===================== UI ===================== */
@@ -446,9 +446,12 @@ export default function CreateProduct() {
                       <Button
                         variant="destructive"
                         onClick={deleteImages}
+                        disabled={deletingIds.length > 0}
                         hidden={selectedImageIds.length === 0}
                       >
-                        Delete Selected Images
+                        {deletingIds.length > 0
+                          ? "Deleting..."
+                          : "Delete Selected Images"}
                       </Button>
                     </div>
 
@@ -505,7 +508,8 @@ export default function CreateProduct() {
                                 <span className="text-sm">Cover</span>
                                 <Switch
                                   checked={img.is_cover}
-                                  onCheckedChange={(checked) =>
+                                  onCheckedChange={(checked) => {
+                                    // 1. update UI
                                     setImages((prev) =>
                                       prev.map((p, i) => {
                                         if (isVideoFile(p.preview)) return p;
@@ -524,8 +528,10 @@ export default function CreateProduct() {
                                           type: "slide",
                                         };
                                       })
-                                    )
-                                  }
+                                    );
+                                    // 2. update backend (ค่าใหม่)
+                                    updateSwitch(Number(img.id), checked);
+                                  }}
                                 />
                               </div>
                             )}
@@ -606,7 +612,6 @@ export default function CreateProduct() {
                       vIndex={vIndex}
                       control={control}
                       register={form.register}
-                      removeVariant={remove}
                     />
                   ))}
 
@@ -625,10 +630,9 @@ export default function CreateProduct() {
                     <FiPlus /> Add Variant
                   </Button>
                   <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Saving..." : "Save"}
-          </Button>
+                    {loading ? "Saving..." : "Save"}
+                  </Button>
                 </form>
-
               </Form>
             </div>
           )}

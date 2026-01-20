@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { SidebarComponent } from "@/app/components/Sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BannerSwitch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { OrderSelectCell } from "./components/OrderSelectCell";
 import CreateBannerTab from "./components/CreateBannerTab";
@@ -165,7 +165,7 @@ export default function Banner() {
       accessorKey: "is_active",
       header: () => <span>Active</span>,
       cell: ({ row }) => (
-        <BannerSwitch
+        <Switch
           checked={row.original.is_active}
           onCheckedChange={async (checked: boolean) => {
             setBannerData((prev) => {

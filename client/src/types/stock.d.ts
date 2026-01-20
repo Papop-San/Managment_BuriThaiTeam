@@ -1,3 +1,5 @@
+//Main Stock
+
 export interface StockResponse{
     status: string;
     data: StockPagination
@@ -54,4 +56,4 @@ type StockRow = {
     price: number;
     stock: number;
   };
-  
+
