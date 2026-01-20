@@ -136,6 +136,7 @@ export default function CreateProduct() {
     control,
     name: "variants",
   });
+  
   const onDeleteVariant = (vIndex: number) => {
     remove(vIndex); 
   };
