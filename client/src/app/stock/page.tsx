@@ -381,7 +381,7 @@ export default function StockPage() {
                             colSpan={columns.length}
                             className="text-center py-10"
                           >
-                            ไม่มีข้อมูล Inventory
+                            Not Found Inventory
                           </TableCell>
                         </TableRow>
                       )}

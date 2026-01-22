@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/pagination";
 import { SidebarComponent } from "../components/Sidebar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowUpDown ,LoaderIcon } from "lucide-react";
+import { ArrowUpDown, LoaderIcon } from "lucide-react";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
 import { Input } from "@/components/ui/input";
 import {
@@ -42,7 +42,7 @@ import {
 import { EditableStatusCellWrapper } from "./components/EditableStatusCellWrapper";
 import { EditableTrackingWrapper } from "./components/EditTrackingCellWrapper";
 import { SlipCell } from "./components/slipCell";
- 
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function OrderManagement() {
@@ -179,9 +179,7 @@ export default function OrderManagement() {
     {
       id: "paymentSlip",
       header: "สลิป",
-      cell: ({ row }) => (
-        <SlipCell slipImage={row.original.slipImage} />
-      ),
+      cell: ({ row }) => <SlipCell slipImage={row.original.slipImage} />,
     },
     {
       accessorKey: "tracking_number",
@@ -240,8 +238,16 @@ export default function OrderManagement() {
   // Dashboard cards (เหมือนเดิม)
   const orderCards = orderData
     ? [
-        { title: "คำสั่งซื้อทั้งหมด", value: orderData.totalOrders, icon: "📦" },
-        { title: "รอดำเนินการ", value: orderData.pendingOrdersCount, icon: "⏳" },
+        {
+          title: "คำสั่งซื้อทั้งหมด",
+          value: orderData.totalOrders,
+          icon: "📦",
+        },
+        {
+          title: "รอดำเนินการ",
+          value: orderData.pendingOrdersCount,
+          icon: "⏳",
+        },
         { title: "กำลังจัดส่ง", value: orderData.deliveryCount, icon: "🚚" },
         { title: "สำเร็จแล้ว", value: orderData.completeCount, icon: "✅" },
       ]
@@ -249,7 +255,7 @@ export default function OrderManagement() {
 
   return (
     <SidebarComponent>
-           <div className="px-5">
+      <div className="px-5">
         <Card>
           <div className="text-center">
             <p className="text-4xl font-semibold">Order Management</p>
@@ -288,17 +294,13 @@ export default function OrderManagement() {
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-10 space-y-3">
+              <div className="flex flex-col items-center justify-center py-10 space-y-3">
                 <LoaderIcon className="h-10 w-10 animate-spin text-gray-500" />
                 <p className="text-gray-500 text-lg">Loading data...</p>
               </div>
             ) : error ? (
               <div className="text-center py-10 text-red-500 text-lg">
                 {error}
-              </div>
-            ) : tableOrders.length === 0 ? (
-              <div className="text-center py-10 text-gray-500 text-lg">
-                No orders found.
               </div>
             ) : (
               <div className="overflow-hidden rounded-md border w-full">
@@ -325,22 +327,29 @@ export default function OrderManagement() {
                   </TableHeader>
 
                   <TableBody>
-                    {table.getRowModel().rows.map((row) => (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell
-                            key={cell.id}
-                            style={{ width: cell.column.getSize() }}
-                            className="text-center"
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext()
-                            )}
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
+                    {table.getRowModel().rows.length > 0
+                      ? table.getRowModel().rows.map((row) => (
+                          <TableRow key={row.id}>
+                            {row.getVisibleCells().map((cell) => (
+                              <TableCell key={cell.id} className="text-center">
+                                {flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext()
+                                )}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      : !loading && (
+                          <TableRow>
+                            <TableCell
+                              colSpan={columns.length}
+                              className="text-center py-10"
+                            >
+                              Not Found Category
+                            </TableCell>
+                          </TableRow>
+                        )}
                   </TableBody>
                 </Table>
               </div>
@@ -349,55 +358,54 @@ export default function OrderManagement() {
             {/* Pagination */}
             {!loading && !error && tableOrders.length > 0 && (
               <div className="flex items-center space-x-2 py-4 justify-center">
-                  <Pagination className="flex justify-end">
-                    <PaginationContent className="w-full justify-end">
-                      <PaginationItem>
-                        <PaginationPrevious
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (!table.getCanPreviousPage()) return;
-                            table.previousPage();
-                          }}
-                        />
-                      </PaginationItem>
+                <Pagination className="flex justify-end">
+                  <PaginationContent className="w-full justify-end">
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!table.getCanPreviousPage()) return;
+                          table.previousPage();
+                        }}
+                      />
+                    </PaginationItem>
 
-                      {paginationRange.map((page, idx) =>
-                        page === "..." ? (
-                          <PaginationItem key={`ellipsis-${idx}`}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        ) : (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              href="#"
-                              isActive={
-                                page ===
-                                table.getState().pagination.pageIndex + 1
-                              }
-                              onClick={(e) => {
-                                e.preventDefault();
-                                table.setPageIndex(page - 1);
-                              }}
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        )
-                      )}
+                    {paginationRange.map((page, idx) =>
+                      page === "..." ? (
+                        <PaginationItem key={`ellipsis-${idx}`}>
+                          <PaginationEllipsis />
+                        </PaginationItem>
+                      ) : (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            href="#"
+                            isActive={
+                              page === table.getState().pagination.pageIndex + 1
+                            }
+                            onClick={(e) => {
+                              e.preventDefault();
+                              table.setPageIndex(page - 1);
+                            }}
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      )
+                    )}
 
-                      <PaginationItem>
-                        <PaginationNext
-                          href="#"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            if (!table.getCanNextPage()) return;
-                            table.nextPage();
-                          }}
-                        />
-                      </PaginationItem>
-                    </PaginationContent>
-                  </Pagination>
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (!table.getCanNextPage()) return;
+                          table.nextPage();
+                        }}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
               </div>
             )}
           </CardContent>

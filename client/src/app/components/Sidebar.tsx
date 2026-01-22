@@ -15,8 +15,10 @@ import {
   Image, 
   User, 
   Shield,
-  CircleDollarSign
+  CircleDollarSign,
+  TextSearch
 } from "lucide-react"; 
+
 
 interface SidebarComponentProps {
   children: ReactNode;
@@ -26,6 +28,7 @@ interface SidebarComponentProps {
 const menuItems = [
   { href: "/dashboard", label: "Dashboard", icon: <Home className="w-5 h-5 mr-2" /> },
   { href: "/order", label: "Order Management", icon: <ShoppingCart className="w-5 h-5 mr-2" /> },
+  { href: "/category", label: "Category", icon: <TextSearch className="w-5 h-5 mr-2" /> },
   { href: "/stock", label: "Stock Management", icon: <Box className="w-5 h-5 mr-2" /> },
   { href: "/banner", label: "Banner", icon: <Image className="w-5 h-5 mr-2" /> },
   { href: "/account", label: "Account Management", icon: <User className="w-5 h-5 mr-2" /> },

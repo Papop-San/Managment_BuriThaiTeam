@@ -195,10 +195,6 @@ export default function Role() {
               </div>
             ) : error ? (
               <div className="text-center py-10 text-red-500">{error}</div>
-            ) : !roleData || roleData.data.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
-                No results found
-              </div>
             ) : (
               <>
                 <div className="overflow-hidden rounded-md border w-full">
@@ -219,18 +215,32 @@ export default function Role() {
                     </TableHeader>
 
                     <TableBody>
-                      {table.getRowModel().rows.map((row) => (
-                        <TableRow key={row.id}>
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id} className="text-center">
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
+                      {table.getRowModel().rows.length > 0
+                        ? table.getRowModel().rows.map((row) => (
+                            <TableRow key={row.id}>
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell
+                                  key={cell.id}
+                                  className="text-center"
+                                >
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        : !loading && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="text-center py-10"
+                              >
+                                Not Found User
+                              </TableCell>
+                            </TableRow>
+                          )}
                     </TableBody>
                   </Table>
                 </div>

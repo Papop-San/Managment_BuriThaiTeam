@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BannerSwitch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -174,7 +174,7 @@ export default function UpdatePaymentForm({
           {/* Active */}
           <div className="flex items-center space-x-3">
             <Label>Active</Label>
-            <BannerSwitch checked={active} onCheckedChange={setActive} />
+            <Switch checked={active} onCheckedChange={setActive} />
           </div>
         </div>
 

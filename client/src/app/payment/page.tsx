@@ -77,7 +77,6 @@ export default function Payment() {
       const json: PaymentResponse = await res.json();
       setPaymentsData(json.data);
     } catch (err) {
-      console.error(err);
       setError("Load data failed");
     } finally {
       setLoading(false);
@@ -170,7 +169,7 @@ export default function Payment() {
     },
   ];
 
-  /* ---------------- table (NO pagination here) ---------------- */
+  /* ---------------- table  ---------------- */
   const table = useReactTable({
     data: paymentData?.data ?? [],
     columns,

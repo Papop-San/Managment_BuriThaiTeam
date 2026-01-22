@@ -4,6 +4,7 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -11,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BannerSwitch } from "@/components/ui/switch";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -55,49 +56,85 @@ export default function CreatePaymentForm({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-center">Create Payment Account</DialogTitle>
+          <DialogTitle>Create Payment Account</DialogTitle>
+          <DialogDescription>
+            Fill in the information below to create a payment account.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <Label className="py-2">First Name</Label>
-            <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
+          <div className="grid gap-4 py-4">
+            {/* First Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+
+            {/* Last Name */}
+            <div className="grid gap-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+
+            {/* Pay Key */}
+            <div className="grid gap-2">
+              <Label htmlFor="payKey">Data</Label>
+              <Input
+                id="payKey"
+                value={payKey}
+                onChange={(e) => setPayKey(e.target.value)}
+              />
+            </div>
+
+            {/* Account Type */}
+            <div className="grid gap-2">
+              <Label>Account Type</Label>
+              <Select
+                value={accountType}
+                onValueChange={(v) =>
+                  setAccountType(v as PaymentMethod)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select account type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PROMPTPAY">PROMPTPAY</SelectItem>
+                  <SelectItem value="BANK">BANK</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Active */}
+            <div className="flex items-center justify-between">
+              <Label htmlFor="active">Active</Label>
+              <Switch
+                id="active"
+                checked={active}
+                onCheckedChange={setActive}
+              />
+            </div>
           </div>
 
-          <div>
-            <Label  className="py-2" >Last Name</Label>
-            <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-          </div>
-
-          <div>
-            <Label  className="py-2" >Data</Label>
-            <Input value={payKey} onChange={(e) => setPayKey(e.target.value)} />
-          </div>
-
-          <div>
-            <Label  className="py-2">Account Type</Label>
-            <Select value={accountType} onValueChange={(v) => setAccountType(v as PaymentMethod)}>
-              <SelectTrigger>
-                <SelectValue placeholder="SELECT ACCOUNT TYPE" />
-              </SelectTrigger>
-              <SelectContent side="bottom" align="start">
-                <SelectItem value="PROMPTPAY">PROMPTPAY</SelectItem>
-                <SelectItem value="BANK">BANK</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-3 py-2" >
-            <Label>Active</Label>
-            <BannerSwitch checked={active} onCheckedChange={setActive} />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button onClick={handleSubmit}>Create</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button type="submit">Create</Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );

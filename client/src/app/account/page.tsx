@@ -42,12 +42,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ClientOnlyDate } from "@/app/components/ClientOnlyDate";
-import {
-  AccountResponse,
-  AccountItem,
-} from "@/types/accounts";
-
-
+import { AccountResponse, AccountItem } from "@/types/accounts";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -66,12 +61,11 @@ export default function Account() {
   const limit = 20;
 
   const formatThaiPhone = (phone: string) => {
-    const digits = phone.replace(/\D/g, "").slice(0, 10); 
+    const digits = phone.replace(/\D/g, "").slice(0, 10);
     const match = digits.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
     if (!match) return digits;
     return [match[1], match[2], match[3]].filter(Boolean).join("-");
   };
-  
 
   const columns: ColumnDef<AccountItem>[] = [
     {
@@ -187,13 +181,9 @@ export default function Account() {
       size: 140,
       header: "Status",
       cell: ({ row }) => (
-        <StatusCell
-          value={row.original.is_active}
-          row={row.original}
-        />
+        <StatusCell value={row.original.is_active} row={row.original} />
       ),
-    }
-    
+    },
   ];
 
   const fetchData = React.useCallback(async () => {
@@ -292,11 +282,11 @@ export default function Account() {
               <DeleteButton
                 endpoint="users"
                 ids={selectedIds}
-                confirmMessage = "ต้องการลบรายชื่อนี้ไหม?"
+                confirmMessage="ต้องการลบรายชื่อนี้ไหม?"
                 disabled={selectedIds.length === 0}
                 onSuccess={async () => {
-                  table.resetRowSelection(); 
-                  await fetchData();         
+                  table.resetRowSelection();
+                  await fetchData();
                 }}
               />
             </div>
@@ -313,10 +303,6 @@ export default function Account() {
             ) : error ? (
               <div className="text-center py-10 text-red-500 text-lg">
                 {error}
-              </div>
-            ) : accountData.length === 0 ? (
-              <div className="text-center py-10 text-gray-500 text-lg">
-                No results found.
               </div>
             ) : (
               <>
@@ -344,29 +330,32 @@ export default function Account() {
                     </TableHeader>
 
                     <TableBody>
-                      {table.getRowModel().rows.length ? (
-                        table.getRowModel().rows.map((row) => (
-                          <TableRow key={row.id}>
-                            {row.getVisibleCells().map((cell) => (
-                              <TableCell key={cell.id} className="text-center">
-                                {flexRender(
-                                  cell.column.columnDef.cell,
-                                  cell.getContext()
-                                )}
+                      {table.getRowModel().rows.length > 0
+                        ? table.getRowModel().rows.map((row) => (
+                            <TableRow key={row.id}>
+                              {row.getVisibleCells().map((cell) => (
+                                <TableCell
+                                  key={cell.id}
+                                  className="text-center"
+                                >
+                                  {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                  )}
+                                </TableCell>
+                              ))}
+                            </TableRow>
+                          ))
+                        : !loading && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={columns.length}
+                                className="text-center py-10"
+                              >
+                                Not Found User
                               </TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      ) : (
-                        <TableRow>
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"
-                          >
-                            No results.
-                          </TableCell>
-                        </TableRow>
-                      )}
+                            </TableRow>
+                          )}
                     </TableBody>
                   </Table>
                 </div>

@@ -7,7 +7,7 @@ import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FiArrowLeft, FiPlus, FiMinus, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiMinus, FiXCircle} from "react-icons/fi";
 import Image from "next/image";
 
 import {
@@ -248,14 +248,14 @@ export default function CreateProduct() {
                       {!img.id && (
                         <button
                           type="button"
-                          className="absolute top-1 right-1 z-10 bg-white rounded-full p-1 shadow"
+                          className="absolute top-1 right-1 z-10 cursor-pointer rounded-full p-1 shadow"
                           onClick={() =>
                             setImages((prev) =>
                               prev.filter((_, i) => i !== index)
                             )
                           }
                         >
-                          <FiTrash2 className="text-red-500 w-4 h-4" />
+                          <FiXCircle className="text-red-500 w-4 h-4 " />
                         </button>
                       )}
                       {/* PREVIEW */}
