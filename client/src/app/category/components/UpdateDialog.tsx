@@ -10,6 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -24,6 +31,7 @@ interface UpdateCategoryFormProps {
   category: Category | null;
   onClose: () => void;
   onUpdated: () => void;
+  mapCategory: Category[] | null;
 }
 
 interface UpdateCategoryFormState {
@@ -98,32 +106,47 @@ export default class UpdateDialog extends Component<
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
-                <Input 
-                    id="name" 
-                    name="name" 
-                    value={name}
-                    onChange={(e) => 
-                        this.setState({name: e.target.value})
-                    }
-                    required />
+                <Input
+                  id="name"
+                  name="name"
+                  value={name}
+                  onChange={(e) => this.setState({ name: e.target.value })}
+                  required
+                />
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="parent_id">Parent ID</Label>
-                <Input
-                  id="parent_id"
-                  name="parent_id"
-                  type="number"
-                  value={parent_id}
-                  onChange={(e) => 
-                      this.setState({parent_id: e.target.value})
-                  }
-                  placeholder="Optional"
-                />
+                <Label htmlFor="parent_id">Parent Category</Label>
+
+                <Select
+                  value={parent_id || undefined}
+                  onValueChange={(value) => this.setState({ parent_id: value })}
+                >
+                  <SelectTrigger id="parent_id" className="w-full">
+                    <SelectValue placeholder="No parent (root category)" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {this.props.mapCategory
+                      ?.filter(
+                        (cat) =>
+                          cat.id_category !== this.props.category?.id_category
+                      )
+                      .map((cat) => (
+                        <SelectItem
+                          key={cat.id_category}
+                          value={String(cat.id_category)}
+                        >
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
             <DialogFooter>
-            <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading}>
                 {loading ? "Saving..." : "Update"}
               </Button>
 

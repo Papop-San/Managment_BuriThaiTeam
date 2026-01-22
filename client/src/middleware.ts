@@ -9,9 +9,11 @@ export const middleware = (req: NextRequest) => {
   }
 
   try {
-    const base64Url = token.split(".")[1];
-    const decoded = JSON.parse(Buffer.from(base64Url, "base64").toString());
-    const now = Date.now() / 1000;
+    const payload = token.split(".")[1];
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(atob(base64));
+
+    const now = Math.floor(Date.now() / 1000);
 
     if (decoded.exp && decoded.exp < now) {
       const response = NextResponse.redirect(new URL("/", req.url));
@@ -20,21 +22,25 @@ export const middleware = (req: NextRequest) => {
     }
 
     return NextResponse.next();
-  } catch (err) {
-    const response = NextResponse.redirect(new URL("/login", req.url));
+  } catch {
+    const response = NextResponse.redirect(new URL("/", req.url));
     response.cookies.delete("token");
     return response;
   }
 };
 
+
 export const config = {
   matcher: [
-    "/dashboard/:path*", 
-    "/account/:path*", 
-    "/banner/:path*", 
-    "/order/:path*", 
-    "/product/:path*", 
-    "/role/:path*", 
-    "/stock/:path*"
+    "/dashboard/:path*",
+    "/account/:path*",
+    "/banner/:path*",
+    "/order/:path*",
+    "/product/:path*",
+    "/role/:path*",
+    "/stock/:path*",
+    "/category/:path*",
+    "/payment/:path*"
+
   ],
 };

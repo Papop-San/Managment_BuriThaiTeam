@@ -10,45 +10,55 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+interface Category {
+  id_category: number;
+  name: string;
+  parent_id: number | null;
+}
 
 interface CreateCategoryFormProps {
   open: boolean;
   onClose: () => void;
   onCreate: () => void;
+  mapCategory: Category[] | null;
 }
 
 export default class CreateDialog extends Component<CreateCategoryFormProps> {
-  
   handleCreateCategory = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-  
+
     this.setState({ loading: true });
-  
+
     const formData = new FormData(e.currentTarget);
-  
+
     const payload = {
       name: formData.get("name"),
       parent_id: formData.get("parent_id")
         ? Number(formData.get("parent_id"))
         : null,
     };
-  
+
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/category`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(payload),
-        }
-      );
-  
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/category`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
       if (!res.ok) throw new Error("Create failed");
-  
-      this.props.onCreate?.(); 
+
+      this.props.onCreate?.();
       this.props.onClose();
     } catch (err) {
       console.error(err);
@@ -74,13 +84,23 @@ export default class CreateDialog extends Component<CreateCategoryFormProps> {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="parent_id">Parent ID</Label>
-                <Input
-                  id="parent_id"
-                  name="parent_id"
-                  type="number"
-                  placeholder="Optional"
-                />
+                <Label htmlFor="parent_id">Parent Category</Label>
+                <Select name="parent_id">
+                  <SelectTrigger id="parent_id" className="w-full">
+                    <SelectValue placeholder="No parent (root category)" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {this.props.mapCategory?.map((cat) => (
+                      <SelectItem
+                        key={cat.id_category}
+                        value={String(cat.id_category)}
+                      >
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <DialogFooter>

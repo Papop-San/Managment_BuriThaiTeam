@@ -357,12 +357,14 @@ export default function Page() {
           open={openCreate}
           onClose={() => setOpenCreate(false)}
           onCreate={handleCreated}
+          mapCategory={data?.data ?? null}
         />
         <UpdateDialog
           open={openEdit}
           onClose={() => setOpenEdit(false)}
           category={selectedCategory}
           onUpdated={fetchData}
+          mapCategory={data?.data ?? null}
         />
       </Card>
     </SidebarComponent>
