@@ -7,7 +7,7 @@ import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FiArrowLeft, FiPlus, FiMinus, FiXCircle} from "react-icons/fi";
+import { FiArrowLeft, FiPlus, FiMinus, FiXCircle } from "react-icons/fi";
 import Image from "next/image";
 
 import {
@@ -132,21 +132,21 @@ export default function CreateProduct() {
 
   const { control } = form;
 
-  const { fields, append , remove} = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control,
     name: "variants",
   });
-  
+
   const onDeleteVariant = (vIndex: number) => {
-    remove(vIndex); 
+    remove(vIndex);
   };
-  
+
   const onDeleteInventory = (
     _vIndex: number,
     iIndex: number,
     removeInventory: (index: number) => void
   ) => {
-    removeInventory(iIndex); 
+    removeInventory(iIndex);
   };
 
   /* ===================== IMAGE UPLOAD ===================== */
@@ -156,13 +156,14 @@ export default function CreateProduct() {
 
   //Upload Handle
   const handleUploadImages = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files) return;
 
     const newImages: UploadedFile[] = Array.from(files).map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       type: "slide",
       is_cover: false,
+      isVideo: file.type.startsWith("video/"),
     }));
 
     setImages((prev) => [...prev, ...newImages]);
@@ -238,7 +239,10 @@ export default function CreateProduct() {
               </Button>
               <div className="grid grid-cols-[repeat(auto-fill,200px)] gap-4">
                 {images.map((img, index) => {
-                  const isVideo = isVideoFile(img.preview);
+                  const isVideo =
+                    img.file instanceof File
+                      ? img.file.type.startsWith("video/")
+                      : isVideoFile(img.preview);
                   return (
                     <div
                       key={img.id ?? img.preview}

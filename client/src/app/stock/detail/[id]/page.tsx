@@ -36,6 +36,7 @@ export default function ProductDetails() {
   const [images, setImages] = useState<UploadedFile[]>([]);
   const [selectedImageIds, setSelectedImageIds] = useState<number[]>([]);
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
+  const [imageLoading, setImageLoading] = useState(false);
 
   const form = useForm<ProductFormValues>({
     defaultValues: {
@@ -197,7 +198,7 @@ export default function ProductDetails() {
       if (!res.ok) {
         throw new Error(await res.text());
       }
-    } catch  {
+    } catch {
       setError("Failed to update product");
     } finally {
       setLoading(false);
@@ -281,13 +282,14 @@ export default function ProductDetails() {
 
   //Upload Handle
   const handleUploadImages = (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+    if (!files) return;
 
     const newImages: UploadedFile[] = Array.from(files).map((file) => ({
       file,
       preview: URL.createObjectURL(file),
       type: "slide",
       is_cover: false,
+      isVideo: file.type.startsWith("video/"),
     }));
 
     setImages((prev) => [...prev, ...newImages]);
@@ -296,14 +298,9 @@ export default function ProductDetails() {
   //Submit Imgaes for Insert
   const handleSumitImages = async () => {
     const newImages = images.filter((img) => img.file instanceof File);
-
-    if (newImages.length === 0) {
-      alert("No new files to upload");
-      return;
-    }
+    if (newImages.length === 0) return;
 
     const formData = new FormData();
-
     newImages.forEach((img) => {
       formData.append("images", img.file as File);
     });
@@ -318,14 +315,28 @@ export default function ProductDetails() {
       )
     );
 
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`, {
-      method: "PUT",
-      body: formData,
-      credentials: "include",
-    });
+    setImageLoading(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`,
+        {
+          method: "PUT",
+          body: formData,
+          credentials: "include",
+        }
+      );
 
-    fetchData();
+      if (!res.ok) {
+        throw new Error("Upload images failed");
+      }
+
+      await fetchData();
+    } finally {
+      setImageLoading(false);
+    }
   };
+  const pendingImages = images.filter((img) => img.file instanceof File);
+
   // Delte Image
   const deleteImages = async () => {
     if (selectedImageIds.length === 0) return;
@@ -350,7 +361,7 @@ export default function ProductDetails() {
       );
 
       if (!res.ok) throw new Error(await res.text());
-    } catch  {
+    } catch {
       fetchData();
       setError("Failed to delete images");
     } finally {
@@ -378,6 +389,8 @@ export default function ProductDetails() {
       credentials: "include",
     });
   };
+
+
 
   /* ===================== UI ===================== */
 
@@ -433,13 +446,15 @@ export default function ProductDetails() {
                         </label>
                       </Button>
 
-                      <Button
-                        type="button"
-                        onClick={handleSumitImages}
-                        hidden={!images.some((img) => img.file)}
-                      >
-                        Save Images
-                      </Button>
+                      {pendingImages.length > 0 && (
+                        <Button
+                          type="button"
+                          onClick={handleSumitImages}
+                          disabled={imageLoading}
+                        >
+                          {imageLoading ? "Saving..." : "Save Image"}
+                        </Button>
+                      )}
                       <Button
                         variant="destructive"
                         onClick={deleteImages}
@@ -455,7 +470,10 @@ export default function ProductDetails() {
                     {/* GRID */}
                     <div className="grid grid-cols-[repeat(auto-fill,200px)] gap-4">
                       {images.map((img, index) => {
-                        const isVideo = isVideoFile(img.preview);
+                        const isVideo =
+                          img.file instanceof File
+                            ? img.file.type.startsWith("video/")
+                            : isVideoFile(img.preview);
 
                         return (
                           <div
