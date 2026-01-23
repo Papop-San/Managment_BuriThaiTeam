@@ -33,6 +33,11 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { TopProductTableItem } from "@/types/dashboard";
+
+export interface PopularTableProps {
+   topTable: TopProductTableItem[]
+}
 
 export type PopularInterface = {
   id: number;
@@ -258,7 +263,7 @@ export const columns: ColumnDef<PopularInterface>[] = [
   },
 ];
 
-export function PopularTable() {
+export function PopularTable({topTable}:PopularTableProps ) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
 

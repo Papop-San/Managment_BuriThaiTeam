@@ -32,3 +32,27 @@ export interface DashboardResponse {
     updated_at: string; 
   }
   
+
+export interface PopularResponse{
+  status: string;
+  data: PopularData;
+} 
+
+export interface PopularData{
+   year: number;
+   Top5PopularChart: TopProductTableItem[];
+   Top5PopularMonthlyBarChart: MonthlyPopularItem[]
+   TablePopular: TopProductTableItem[];
+
+}
+
+export interface MonthlyPopularItem {
+  month: string;
+  [productName: string]: number | string;
+}
+
+export interface TopProductTableItem {
+  rank: number;
+  productName: string;
+  totalQuantity: number;
+}

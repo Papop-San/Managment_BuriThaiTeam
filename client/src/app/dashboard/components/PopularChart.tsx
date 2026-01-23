@@ -27,6 +27,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { TopProductTableItem, MonthlyPopularItem } from "@/types/dashboard";
+
+interface PopularGraphProps {
+  popularPieChart: TopProductTableItem[];
+  popularBarchart: MonthlyPopularItem[]
+}
+
+
 
 export type PopularInterface = {
   id: number;
@@ -427,7 +435,7 @@ const top5Products = Object.entries(totalSalesByProduct)
 
 const colors = ["#4f46e5", "#ec4899", "#10b981", "#f97316", "#3b82f6"];
 
-export function ChartBarStackedTop5ByMonth() {
+export function ChartBarStackedTop5ByMonth({ popularBarchart , popularPieChart }: PopularGraphProps) {
   const [filterBy, setFilterBy] = useState<"month" | "year">("month");
   const [mounted, setMounted] = useState(false);
 
