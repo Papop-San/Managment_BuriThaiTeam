@@ -42,6 +42,7 @@ import {
 } from "@/types/stock";
 import Image from "next/image";
 import DeleteButton from "@/components/deleteButton";
+import { CategoryData, CategoryResponse } from "@/types/category";
 
 export default function StockPage() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -49,6 +50,7 @@ export default function StockPage() {
     useState<StockPagination | null>(null);
 
   const [stockRows, setStockRows] = useState<StockRow[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryData[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -61,18 +63,28 @@ export default function StockPage() {
     setError("");
 
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/products/stocks?page=${page}&limit=${limit}&search=${search}`,
-        { method: "GET", credentials: "include" }
-      );
+      const [resStock, resCategory] = await Promise.all([
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/products/stocks?page=${page}&limit=${limit}&search=${search}`,
+          { method: "GET", credentials: "include" }
+        ),
+        fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/category?page=${page}&limit=${limit}&search=${search}`,
+          {
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }
+        ),
+      ]);
 
-      const result: StockResponse = await res.json();
+      const resultStock: StockResponse = await resStock.json();
+      const resultCategory: CategoryResponse = await resCategory.json();
 
-      if (!res.ok) {
-        throw new Error(result.status || "Fetch error");
+      if (!resStock.ok || !resultCategory) {
+        throw new Error(resultStock.status || "Fetch error");
       }
 
-      const flatRows: StockRow[] = result.data.data.flatMap((product) => {
+      const flatRows: StockRow[] = resultStock.data.data.flatMap((product) => {
         if (!product.variants || product.variants.length === 0) return [];
 
         return product.variants.flatMap((variant) => {
@@ -96,8 +108,9 @@ export default function StockPage() {
         });
       });
 
-      setStockPagination(result.data);
+      setStockPagination(resultStock.data);
       setStockRows(flatRows);
+      setCategoryData(resultCategory.data.data);
     } catch (err) {
       console.error(err);
       setError("Loading failed");
@@ -322,10 +335,13 @@ export default function StockPage() {
                 />
               </div>
               <div className="flex flex-wrap items-center gap-5 md:flex-row">
-                <Link href="/stock/create">
-                  <Button className="cursor-pointer hover:text-black hover:bg-white border border-black">
-                    Create
-                  </Button>
+                <Link
+                  href={{
+                    pathname: "/stock/create",
+                    query: { categoryData: JSON.stringify(categoryData) },
+                  }}
+                >
+                  <Button>Create</Button>
                 </Link>
                 <DeleteButton
                   endpoint="products/inventories"

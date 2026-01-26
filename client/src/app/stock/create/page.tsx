@@ -3,13 +3,13 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
-
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FiArrowLeft, FiPlus, FiMinus, FiXCircle } from "react-icons/fi";
 import Image from "next/image";
-
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -17,14 +17,25 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { UploadedFile } from "../dtos/upload-file.dto";
 import { ProductFormValues } from "../dtos/product.dto";
 import { VariantItemProps } from "../dtos/variant.dto";
 
-/* ===================== VARIANT ITEM ===================== */
+interface Category {
+  id_category: number;
+  name: string;
+  parent_id: number | null;
+}
 
+/* ===================== VARIANT ITEM ===================== */
 const VariantItem = ({
   vIndex,
   control,
@@ -118,6 +129,11 @@ const VariantItem = ({
 export default function CreateProduct() {
   const router = useRouter();
   const [images, setImages] = useState<UploadedFile[]>([]);
+
+  // Get Params Search
+  const searchParams = useSearchParams();
+  const raw = searchParams.get("categoryData");
+  const categoryData: Category[] = raw ? (JSON.parse(raw) as Category[]) : [];
 
   const form = useForm<ProductFormValues>({
     defaultValues: {
@@ -361,7 +377,7 @@ export default function CreateProduct() {
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Textarea {...field} />
                   </FormControl>
                 </FormItem>
               )}
@@ -372,9 +388,27 @@ export default function CreateProduct() {
               name="id_category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category ID</FormLabel>
+                  <FormLabel>Category</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Select
+                      value={field.value ? String(field.value) : undefined}
+                      onValueChange={(value) => field.onChange(Number(value))}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        {categoryData.map((cat) => (
+                          <SelectItem
+                            key={cat.id_category}
+                            value={String(cat.id_category)}
+                          >
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormControl>
                 </FormItem>
               )}
@@ -383,7 +417,7 @@ export default function CreateProduct() {
             {/* ================= VARIANTS ================= */}
             {fields.map((field, vIndex) => (
               <VariantItem
-                key={field.id} // ✅ สำคัญมาก
+                key={field.id} 
                 vIndex={vIndex}
                 control={control}
                 register={form.register}

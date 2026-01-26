@@ -58,10 +58,6 @@ export default function DashboardPage() {
       setLoading(false);
     }
   };
-  
-
-
-
 
   const dashboardCards = dashboardData
     ? [
