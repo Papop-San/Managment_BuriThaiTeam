@@ -12,9 +12,6 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [popularData, setPopularData] = useState<PopularData | null>(null);
 
-
-
-
   const [error, setError] = useState("");
   const [loading, setLoading] = useState<boolean>(true);
 
