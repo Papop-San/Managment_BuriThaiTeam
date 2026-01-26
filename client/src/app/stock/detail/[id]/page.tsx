@@ -3,11 +3,12 @@
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
-
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FiArrowLeft, FiPlus, FiMinus } from "react-icons/fi";
 import { LoaderIcon } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Form,
   FormControl,
@@ -15,6 +16,13 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +32,12 @@ import { UploadedFile } from "../../dtos/upload-file.dto";
 import { ProductFormValues } from "../../dtos/product.dto";
 import { VariantItemProps } from "../../dtos/variant.dto";
 import { ProductImage } from "../../dtos/inventory.dto";
+
+interface Category {
+  id_category: number;
+  name: string;
+  parent_id: number | null;
+}
 
 /* ===================== MAIN ===================== */
 
@@ -37,6 +51,10 @@ export default function ProductDetails() {
   const [selectedImageIds, setSelectedImageIds] = useState<number[]>([]);
   const [deletingIds, setDeletingIds] = useState<number[]>([]);
   const [imageLoading, setImageLoading] = useState(false);
+
+  const searchParams = useSearchParams();
+  const raw = searchParams.get("categoryData");
+  const categoryData: Category[] = raw ? (JSON.parse(raw) as Category[]) : [];
 
   const form = useForm<ProductFormValues>({
     defaultValues: {
@@ -348,7 +366,6 @@ export default function ProductDetails() {
       prev.filter((img) => !img.id || !idsToDelete.includes(img.id))
     );
     setSelectedImageIds([]);
-
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}/images`,
@@ -382,7 +399,6 @@ export default function ProductDetails() {
         },
       ])
     );
-
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products/${params.id}`, {
       method: "PUT",
       body: formData,
@@ -390,10 +406,7 @@ export default function ProductDetails() {
     });
   };
 
-
-
   /* ===================== UI ===================== */
-
   return (
     <>
       <Button variant="outline" onClick={() => router.back()}>
@@ -602,7 +615,7 @@ export default function ProductDetails() {
                       <FormItem>
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Textarea {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -613,9 +626,31 @@ export default function ProductDetails() {
                     name="id_category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category ID</FormLabel>
+                        <FormLabel>Category</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <Select
+                            value={
+                              field.value ? String(field.value) : undefined
+                            }
+                            onValueChange={(value) =>
+                              field.onChange(Number(value))
+                            }
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                              {categoryData.map((cat) => (
+                                <SelectItem
+                                  key={cat.id_category}
+                                  value={String(cat.id_category)}
+                                >
+                                  {cat.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                       </FormItem>
                     )}

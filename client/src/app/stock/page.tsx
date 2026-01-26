@@ -58,6 +58,8 @@ export default function StockPage() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  
+
   const fetchData = React.useCallback(async () => {
     setLoading(true);
     setError("");
@@ -164,7 +166,11 @@ export default function StockPage() {
         return (
           <div className="text-center">
             <Link
-              href={`/stock/detail/${productId}`}
+              href={{
+                pathname: `/stock/detail/${productId}`,
+                query: { categoryData: JSON.stringify(categoryData) },
+              }}
+              
               className="text-blue-600 hover:underline"
             >
               {inventoryId}
