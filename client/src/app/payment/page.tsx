@@ -76,7 +76,7 @@ export default function Payment() {
       );
       const json: PaymentResponse = await res.json();
       setPaymentsData(json.data);
-    } catch (err) {
+    } catch {
       setError("Load data failed");
     } finally {
       setLoading(false);
@@ -145,7 +145,7 @@ export default function Payment() {
       header: "Data",
       cell: ({ row }) => (
         <span className="block truncate text-center">
-          {row.original.payKey}
+          {formatPayKey(row.original.payKey)}
         </span>
       ),
     },
@@ -225,6 +225,25 @@ export default function Payment() {
       console.error(err);
     }
   };
+
+  /* ---------------- Format ---------------- */
+  const formatPayKey = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+
+    if (digits.length === 10) {
+      return digits.replace(/(\d{3})(\d{3})(\d{4})/, "$1-$2-$3");
+    }
+
+    if (digits.length === 13) {
+      return digits.replace(
+        /(\d{1})(\d{4})(\d{5})(\d{2})(\d{1})/,
+        "$1-$2-$3-$4-$5"
+      );
+    }
+    return value
+  }
+
+
 
   /* ====================== UI ====================== */
   return (
