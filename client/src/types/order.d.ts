@@ -21,7 +21,7 @@ export interface OrdersData {
 export interface OrderDetails {
   id_order: number;
   created_at: string;
-  status: "pending" | "confirmed" | "checking" | "shipped" | "completed" | "canceled";
+  status: "pending" | "confirmed" | "checking"  | "success" | "canceled";
   user: OrderUser;
   order_items_count: number;
   dynamic_total_price: number;
@@ -66,7 +66,7 @@ export type OrderInterface = {
   paymentMethod?: string;
   paymentAmount?: number;
   paymentPayloadId?: string | null;
-  paymentStatus: "pending" | "confirmed" | "checking" | "shipped" | "completed" | "canceled";
+  paymentStatus: "pending" | "confirmed" | "checking"  | "success" | "canceled";
   slipImage: PaymentSlipImage | null;
 
 };

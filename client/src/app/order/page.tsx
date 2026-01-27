@@ -248,7 +248,6 @@ export default function OrderManagement() {
           value: orderData.pendingOrdersCount,
           icon: "⏳",
         },
-        { title: "กำลังจัดส่ง", value: orderData.deliveryCount, icon: "🚚" },
         { title: "สำเร็จแล้ว", value: orderData.completeCount, icon: "✅" },
       ]
     : [];

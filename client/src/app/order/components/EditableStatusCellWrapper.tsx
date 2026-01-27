@@ -32,13 +32,12 @@ export function EditableStatusCellWrapper({ row }: Props) {
   return (
     <EditableStatusCell
       value={value}
-      options={["pending", "confirmed", "checking", "shipped", "completed", "canceled"]}
+      options={["pending", "confirmed", "checking", "success", "canceled"]}
       colorMap={{
         pending: "bg-yellow-500",
         confirmed: "bg-blue-500",
         checking: "bg-purple-500",
-        shipped: "bg-indigo-500",
-        completed: "bg-green-600",
+        success: "bg-green-600",
         canceled: "bg-red-600",
       }}
       onSave={handleSave}
