@@ -3,6 +3,11 @@ import type { NextRequest } from "next/server";
 
 export const middleware = (req: NextRequest) => {
   const token = req.cookies.get("token")?.value;
+  const { pathname } = req.nextUrl;
+
+  if (token && pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
+  }
 
   if (!token) {
     return NextResponse.redirect(new URL("/", req.url));
@@ -29,9 +34,9 @@ export const middleware = (req: NextRequest) => {
   }
 };
 
-
 export const config = {
   matcher: [
+    "/",
     "/dashboard/:path*",
     "/account/:path*",
     "/banner/:path*",
@@ -40,7 +45,6 @@ export const config = {
     "/role/:path*",
     "/stock/:path*",
     "/category/:path*",
-    "/payment/:path*"
-
+    "/payment/:path*",
   ],
 };
